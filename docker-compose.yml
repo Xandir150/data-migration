@@ -15,7 +15,7 @@ version: '2.4'
 services:
 
   data-migration:
-    image: pbortnik/data-migration:latest
+    image: reportportal/data-migration:latest
     #volumes:
     #  - ./data/storage:/data/storage
     environment:
