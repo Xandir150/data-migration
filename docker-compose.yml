@@ -37,7 +37,7 @@ services:
       RP_BINARYSTORE_MINIO_ACCESSKEY: minio
       RP_BINARYSTORE_MINIO_SECRETKEY: minio123
 
-      # Data older than dates below will not migrate
+      # Data older than dates below will not migrate. ISO_LOCAL_DATE (yyyy-MM-dd)
       RP_LAUNCH_KEEPFROM: '2000-01-01'
       RP_TEST_KEEPFROM: '2000-01-01'
       RP_LOG_KEEPFROM: '2000-01-01'
