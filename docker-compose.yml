@@ -12,7 +12,7 @@
 version: '2.4'
 services:
 
-  server-migration:
+  settings-migration:
     image: reportportal/settings-migration:latest
     environment:
       # Postgres params
