@@ -22,6 +22,7 @@ services:
 #      RP_DB_NAME: reportportal
 #      RP_DB_PORT: 5432
 
+      RP_LAUNCH_KEEPATTR: 'forever'
       RP_BINARYSTORE_TYPE: minio
       RP_BINARYSTORE_MINIO_ENDPOINT: http://minio:9000
       RP_BINARYSTORE_MINIO_ACCESSKEY: minio
