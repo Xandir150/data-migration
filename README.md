@@ -3,13 +3,13 @@
  ReportPortal v5 introduces a number of huge differences comparing to previous versions:
 * Consul is removed
 * MongoDB is replaced with Postgres 12
-* RabbitMQ is introduced as a bus between client and api
+* RabbitMQ is introduced as a bus between reporting client and api
 * RabbitMQ is introduced as a bus for services inner communication
 * Kubernetes support is introduced
-* Binary (File) data storage has been decoupled from database. The following options are available: **Filesystem** (_Binary data is stored in directories on the local filesystem_), **Minio** (_[MinIO](https://min.io) High Performance Object Storage_)
+* Binary (File) data storage has been decoupled from database. The following options are available: **Minio** (_[MinIO](https://min.io) High Performance Object Storage_) **(recommended by default)**, **Filesystem** (_Binary data is stored in directories on the local filesystem_)
 
-# Deploying ReportPortal v.5 with migrated data
-* [1. Clear deployment with NO data migration from v.4 ](https://github.com/reportportal/reportportal/wiki/Migration-to-ReportPortal-v.5#1-clear-deployment-with-no-data-migration-from-v4)
+# Deploying ReportPortal v.5
+* [1. Clear Docker deployment WITHOUT data migration from v.4 ](https://github.com/reportportal/reportportal/wiki/Migration-to-ReportPortal-v.5#1-clear-deployment-with-no-data-migration-from-v4)
   * [Binary (file) data storage](https://github.com/reportportal/reportportal/wiki/Migration-to-ReportPortal-v.5#binary-file-data-storage)
   * [RabbitMQ server configuration](https://github.com/reportportal/reportportal/wiki/Migration-to-ReportPortal-v.5#rabbitmq-server-configuration)
   * [PostgreSQL configuration](https://github.com/reportportal/reportportal/wiki/Migration-to-ReportPortal-v.5#postgresql-configuration)
@@ -23,8 +23,8 @@
 
 
   
-## 1. Clear deployment with NO data migration from v.4 
-  Deploy ReportPortal using a new, v5 [docker-compose.yml](https://github.com/reportportal/reportportal/blob/master/docker-compose-v5.yml) file. Minio is used as a data store by default.
+## 1. Clear deployment WITHOUT data migration from v.4 
+  Deploy ReportPortal using a new, v5 [docker-compose.yml](https://github.com/reportportal/reportportal/blob/master/docker-compose.yml) file. Minio is used as a data store by default.
 
 
 ### Binary (file) data storage
@@ -75,7 +75,7 @@ If you use a different configuration for RabbitMQ (you have a separate RabbitMQ 
       - RP_AMQP_QUEUESPERPOD=10 #Only for cluster deploy
 ```
 
-`analyzer` container:
+`analyzer` container have to communicate through RabbitMQ:
 ```yml
     environment:
       - AMQP_URL=amqp://user:pass@host:port  #RabbitMQ server address
@@ -84,9 +84,9 @@ If you use a different configuration for RabbitMQ (you have a separate RabbitMQ 
 
 ### PostgreSQL configuration 
 
-ReportPortal API contains a default configuration for PostgreSQL. If you use default docker-compose, then there's nothing to change.
+ReportPortal API contains a default configuration for PostgreSQL. If you use default docker-compose, then there's nothing to change. Notice that **'db-scripts'** container is responsible for initializing of ReportPortal database and adding default data.
 
-If you use a different configuration for PostgreSQL (you have a separate PostgreSQL service) append the following `environment` keys to to the `API` and `uat` services to use it:
+If you use a different configuration for PostgreSQL (e.g. you have a separate PostgreSQL service) append the following `environment` keys to to the `API` and `UAT` services to use it:
 
 `API` container:
 ```yml
@@ -97,7 +97,7 @@ If you use a different configuration for PostgreSQL (you have a separate Postgre
       - RP_DATASOURCE_MAXIMUMPOOLSIZE=27 # Connections opened to the server. 27 by default
 ```
 
-`uat` container:
+`UAT` container:
 ```yml
     environment:
       - RP_DB_URL=jdbc:postgresql://host:port/name # where name= name of db
@@ -106,14 +106,25 @@ If you use a different configuration for PostgreSQL (you have a separate Postgre
       - RP_DATASOURCE_MAXIMUMPOOLSIZE=27 # Connections opened to the server. 27 by default
 ```
 
+`db-scripts` container:
+```yml
+    environment:
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: reportportal
+      POSTGRES_USER: rpuser
+      POSTGRES_PASSWORD: rppass
+```
+
 
 
 ## 2. Data migration from v4 to v5
 ### ‼️ IMPORTANT
+* Migration is supported only from the ReportPortal v4.3 and higher
 * Migration services require at least 8GB of RAM. Upper limit can be change via 
 ```yml
    environment:
-      JAVA_OPTS: "-Xms8g -Xmx12g -Djava.security.egd=file:/dev/./urandom"
+      JAVA_OPTS: "-Xmx8g -Djava.security.egd=file:/dev/./urandom"
 ```
 * It's highly recommended to make a MongoDB backup before migration. 
 * It is recommended to stop service-api to speed up data migration for heavy MonogDB.
@@ -134,28 +145,25 @@ Migration process split into 2 options:
 The following steps should be performed in order to migrate the configuration:
 1. Running MongoDB with v.4 data (you don't need ReportPortal v4 running itself)
 2. Running PostgreSQL and MinIO (you don't need ReportPortal v5 running itself)
-3. Configure 'server-migration' service from [docker-compose.yml](https://github.com/pbortnik/data-migration/blob/settings-migration/docker-compose.yml). It contains all RPv5 services, which will start after successful migration.
-4. User configuration details from section below
 
+### 2.2 Migrate settings
 
-### 2.2 Migrate configuration
+#### 'settings-migration' configuration
 
-#### 'server-migration' configuration
+Configure [docker-compose.yml](https://github.com/reportportal/data-migration/blob/settings-migration/docker-compose.yml) according to your ReportPortal deploy.
 
 ```yml
-  server-migration:
-    image: pbortnik/server-migration:latest
-    depends_on:
-      db-scripts:
-        condition: service_started
-      minio:
-        condition: service_healthy
+  settings-migration:
+    image: reportportal/settings-migration:latest
     environment:
       # Postgres params
-      RP_DB_HOST: postgres
-      # RP_DB_PORT: 5432
-      # RP_DB_NAME: reportportal
+      RP_DB_HOST: postgres # Where PostgreSQL is hosted
+      RP_DB_USER: rpuser   # User for reportportal db
+      RP_DB_PASS: rppass   # Password for reportportal db
+      RP_DB_NAME: reportportal # The name of reportportal db
+      RP_DB_PORT: 5432 # PostgresSQL port
 
+      # Datastorage params
       RP_BINARYSTORE_TYPE: minio
       RP_BINARYSTORE_MINIO_ENDPOINT: http://minio:9000
       RP_BINARYSTORE_MINIO_ACCESSKEY: minio
@@ -166,17 +174,16 @@ The following steps should be performed in order to migrate the configuration:
       
       # RP_LAUNCH_KEEPATTR: 'forever' # default config for new cleaning launches job. available values: '2 weeks', '1 month', '3 months', '6 months'. Can be changed via UI further. 
       # Mongodb params
-      RP_MONGODB_DATABASE: reportportal
-      RP_MONGODB_URI: mongodb://user:password@host:port
+      RP_MONGODB_URI: mongodb://user:password@host:port/database_name
       # RP_DATASOURCE_MAXIMUMPOOLSIZE=   #  |Connections opened to the server|
       # RP_POOL_COREPOOLSIZE=6           #  |Core pool size of service task executor. Default 6|
       # RP_POOL_MAXPOOLSIZE=8            #  |Max pool size of service task executor. Default 8 |
       # RP_BINARYSTORE_PATH=             #  |Only for filesystem type. Path inside settings-migration container for storing data. It should be mapped to the filesystem outside docker, so the api can be mapped on the same directory to find files|
       # RP_BINARYSTORE_CONATINER_PATH=   #  |Only for filesystem type. Path inside api container. This path is stored in database. Should be equals to RP_BINARYSTORE_PATH in api service|
 ```
-Now start configured [docker-compose.yml](https://github.com/pbortnik/data-migration/blob/settings-migration/docker-compose.yml). 
+Now start configured [docker-compose.yml](https://github.com/reportportal/data-migration/blob/settings-migration/docker-compose.yml). 
 ```bash
-$> docker-compose -p reportportal up -d --force-recreate
+$> docker-compose -p {reportportal_network} up -d --force-recreate
 ```
 It deploys ReportPortal v5 and runs a migration service. Configuration migration is pretty fast. 
 Take the [following steps](https://github.com/reportportal/reportportal/wiki/Migration-to-ReportPortal-v.5#3-checking-migration-status) to make sure that migration is finished. Notice, that in v.5 is added a new cleaning job that removes all launches older than 3 month. It is a configuration in project settings. If you need to store launches older than 3 month it is recommended to change project settings after server migration.
@@ -186,7 +193,7 @@ Includes [configuration migration](https://github.com/reportportal/reportportal/
 
 The following steps should be done for data migration:
 1. Make sure you successfully run [Configuration-migration](https://github.com/reportportal/reportportal/wiki/Migration-to-ReportPortal-v.5/_edit#22-migrate-configuration), and it must be finished.
-2. Now configure `data-migration` service from [docker-compose.yml](https://github.com/pbortnik/data-migration/blob/data-migration/docker-compose.yml) 
+2. Now configure `data-migration` service from [docker-compose.yml](https://github.com/reportportal/data-migration/blob/data-migration/docker-compose.yml) 
 3. Follow configuration details below
  
 
@@ -195,43 +202,44 @@ The following steps should be done for data migration:
 
 ```yml
   data-migration:
-    image: pbortnik/data-migration:latest
+    image: reportportal/data-migration:latest
     #volumes:
     #  - ./data/storage:/data/storage
     environment:
       JAVA_OPTS: "-Xmx8g -Djava.security.egd=file:/dev/./urandom"
       # Postgres params
-      RP_DB_HOST: postgres
-
+      RP_DB_HOST: postgres # Where PostgreSQL is hosted
+      RP_DB_USER: rpuser   # User for reportportal db
+      RP_DB_PASS: rppass   # Password for reportportal db
+      RP_DB_NAME: reportportal # The name of reportportal db
+      RP_DB_PORT: 5432 # PostgresSQL port
       RP_POOL_COREPOOLSIZE: 8 # Depends on your processor type and amount of cores
       RP_POOL_MAXPOOLSIZE: 14 # Should be higher than core pool size
-      RP_ITEMS_BATCH: 30000  # Count of processing items for each thread. A bigger number needs more RAM. 
+      RP_ITEMS_BATCH: 10000  # Count of processing items for each thread. A bigger number needs more RAM. 
       RP_DATASOURCE_MAXIMUMPOOLSIZE: 24 # Size of connections to Postgres. Should be higher that core pool size
 
-      # RP_DB_PORT: 5432
-      # RP_DB_NAME: reportportal
-      # Api containreg binarystore path
+      # Api container binarystore path
       # RP_BINARYSTORE_CONTAINER_PATH: /data/storage
       # RP_BINARYSTORE_PATH: /data/storage
+
       RP_BINARYSTORE_TYPE: minio
       RP_BINARYSTORE_MINIO_ENDPOINT: http://minio:9000
       RP_BINARYSTORE_MINIO_ACCESSKEY: minio
       RP_BINARYSTORE_MINIO_SECRETKEY: minio123
 
-      # Users with last loging later than will be migrated
+      # Data older than dates below will not migrate. ISO_LOCAL_DATE (yyyy-MM-dd)
       RP_LAUNCH_KEEPFROM: '2000-01-01'     # Keep launches from date in ISO_LOCAL_DATE (yyyy-MM-dd)
       RP_TEST_KEEPFROM: '2000-01-01'       # Keep test from date in ISO_LOCAL_DATE (yyyy-MM-dd). Example: '2000-01-01'
       RP_LOG_KEEPFROM: '2000-01-01'        # Keep logs from date in ISO_LOCAL_DATE (yyyy-MM-dd). Example: '2000-01-01'
       RP_ATTACH_KEEPFROM: '2000-01-01'     # Keep attachments from date in ISO_LOCAL_DATE (yyyy-MM-dd). Example: '2000-01-01'
 
       # Mongo params
-      RP_MONGODB_DATABASE: reportportal
-      RP_MONGODB_URI: mongodb://user:password@host:port
+      RP_MONGODB_URI: mongodb://user:password@host:port/database_name
 ```
 
-Now start configured [docker-compose.yml](https://github.com/pbortnik/data-migration/blob/data-migration/docker-compose.yml). 
+Now start configured [docker-compose.yml](https://github.com/reportportal/data-migration/blob/data-migration/docker-compose.yml). 
 ```bash
-$> docker-compose -p reportportal up -d --force-recreate
+$> docker-compose -p {reportportal_network} up -d --force-recreate
 ```
 It runs a `Data-Migration` service. It can take a while, so now you have some time for vacation.
 Take the [following steps](https://github.com/reportportal/reportportal/wiki/Migration-to-ReportPortal-v.5#3-checking-migration-status) to make sure that migration is finished.
