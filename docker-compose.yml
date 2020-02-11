@@ -21,11 +21,12 @@ services:
     environment:
       JAVA_OPTS: "-Xmx8g -Djava.security.egd=file:/dev/./urandom"
       # Postgres params
-      RP_DB_HOST: postgres
-#      RP_DB_USER: rpuser
-#      RP_DB_PASS: rppass
-#      RP_DB_NAME: reportportal
-#      RP_DB_PORT: 5432
+      RP_DB_HOST: postgres # Where PostgreSQL is hosted
+      RP_DB_USER: rpuser   # User for reportportal db
+      RP_DB_PASS: rppass   # Password for reportportal db
+      RP_DB_NAME: reportportal # The name of reportportal db
+      RP_DB_PORT: 5432 # PostgresSQL port
+
       RP_POOL_COREPOOLSIZE: 8 # Depends on your processor type and amount of cores
       RP_POOL_MAXPOOLSIZE: 14 # Should be higher than core pool size
       RP_ITEMS_BATCH: 10000  # Count of processing items for each thread. A bigger number needs more RAM.
