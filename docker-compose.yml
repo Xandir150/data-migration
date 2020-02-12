@@ -16,13 +16,13 @@ services:
     image: reportportal/settings-migration:latest
     environment:
       # Postgres params
-      RP_DB_HOST: postgres
-      RP_DB_USER: rpuser
-      RP_DB_PASS: rppass
-      RP_DB_NAME: reportportal
-      RP_DB_PORT: 5432
+      RP_DB_HOST: postgres # Where PostgreSQL is hosted
+      RP_DB_USER: rpuser   # User for reportportal db
+      RP_DB_PASS: rppass   # Password for reportportal db
+      RP_DB_NAME: reportportal # The name of reportportal db
+      RP_DB_PORT: 5432 # PostgresSQL port
 
-#      RP_LAUNCH_KEEPATTR: 'forever' # default config for new cleaning launches job. available values: '2 weeks', '1 month', '3 months',  '6 months'. Can be changed via UI further.
+      RP_LAUNCH_KEEPATTR: '6 months' # default config for new cleaning launches job. available values: '2 weeks', '1 month', '3 months',  '6 months'. Can be changed via UI further.
       RP_BINARYSTORE_TYPE: minio
       RP_BINARYSTORE_MINIO_ENDPOINT: http://minio:9000
       RP_BINARYSTORE_MINIO_ACCESSKEY: minio
