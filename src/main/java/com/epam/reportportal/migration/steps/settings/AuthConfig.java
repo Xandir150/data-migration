@@ -123,7 +123,7 @@ public class AuthConfig {
 		}
 
 		jdbcTemplate.update(
-				"INSERT INTO reportportal.public.ldap_config (id, url, base_dn, sync_attributes_id, user_dn_pattern, "
+				"INSERT INTO ldap_config (id, url, base_dn, sync_attributes_id, user_dn_pattern, "
 						+ "user_search_filter, group_search_base, group_search_filter, password_attributes, manager_dn, manager_password, passwordencodertype) "
 						+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,cast(? AS PASSWORD_ENCODER_TYPE))",
 				ldapId,
