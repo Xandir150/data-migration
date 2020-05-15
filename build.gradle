@@ -37,7 +37,7 @@ dependencies {
 
     compile('org.springframework.boot:spring-boot-starter-batch:2.1.7.RELEASE')
 
-    compile 'com.epam.reportportal:commons:5.0.0-BETA-2'
+    compile 'com.epam.reportportal:commons:5.0.0'
     compile 'io.minio:minio:6.0.10'
     compile 'org.apache.commons:commons-lang3:3.9'
 
