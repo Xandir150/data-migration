@@ -9,6 +9,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.Date;
 
 import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtc;
+import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtcNullSafe;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
@@ -22,7 +23,7 @@ public class TestProviderUtils {
 		parameterSource.addValue("tp", item.get("type"));
 		parameterSource.addValue("st", toUtc((Date) item.get("start_time")));
 		parameterSource.addValue("descr", item.get("itemDescription"));
-		parameterSource.addValue("lm", toUtc((Date) item.get("last_modified")));
+		parameterSource.addValue("lm", toUtcNullSafe((Date) item.get("last_modified")));
 		parameterSource.addValue("uq", item.get("uniqueId"));
 		parameterSource.addValue("thash", item.get("uniqueId").hashCode());
 		parameterSource.addValue("ch", item.get("has_childs"));
@@ -37,7 +38,7 @@ public class TestProviderUtils {
 		parameterSource.addValue("tp", item.get("type"));
 		parameterSource.addValue("st", toUtc((Date) item.get("start_time")));
 		parameterSource.addValue("descr", item.get("itemDescription"));
-		parameterSource.addValue("lm", toUtc((Date) item.get("last_modified")));
+		parameterSource.addValue("lm", toUtcNullSafe((Date) item.get("last_modified")));
 		parameterSource.addValue("uq", item.get("uniqueId"));
 		parameterSource.addValue("thash", item.get("uniqueId").hashCode());
 		parameterSource.addValue("ch", item.get("has_childs"));

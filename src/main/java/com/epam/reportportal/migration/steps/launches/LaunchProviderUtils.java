@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtc;
+import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtcNullSafe;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
@@ -25,7 +26,7 @@ class LaunchProviderUtils {
 		parameterSource.addValue("start", toUtc((Date) item.get("start_time")));
 		parameterSource.addValue("end", toUtc((Date) item.get("end_time")));
 		parameterSource.addValue("num", item.get("number"));
-		parameterSource.addValue("last", toUtc((Date) item.get("last_modified")));
+		parameterSource.addValue("last", toUtcNullSafe((Date) item.get("last_modified")));
 		parameterSource.addValue("md", item.get("mode"));
 		parameterSource.addValue("st", item.get("status"));
 		parameterSource.addValue("approx", item.get("approximateDuration"));

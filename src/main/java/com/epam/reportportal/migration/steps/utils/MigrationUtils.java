@@ -19,6 +19,13 @@ public class MigrationUtils {
 
 	public static final String SELECT_USER_ID = "SELECT id FROM users WHERE users.login = :lg";
 
+	public static Timestamp toUtcNullSafe(Date date) {
+		if (date == null) {
+			return Timestamp.from(Instant.now());
+		}
+		return Timestamp.valueOf(LocalDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC));
+	}
+
 	public static Timestamp toUtc(Date date) {
 		if (date == null) {
 			return null;

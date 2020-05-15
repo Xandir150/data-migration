@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.epam.reportportal.migration.datastore.binary.impl.DataStoreUtils.buildThumbnailFileName;
 import static com.epam.reportportal.migration.datastore.binary.impl.DataStoreUtils.isImage;
 import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtc;
+import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtcNullSafe;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
@@ -166,7 +167,7 @@ public class LogWriter implements ItemWriter<DBObject> {
 		parameterSource.addValue("lt", toUtc((Date) log.get("logTime")));
 		parameterSource.addValue("lmsg", log.get("logMsg"));
 		parameterSource.addValue("item", log.get("itemId"));
-		parameterSource.addValue("lm", toUtc((Date) log.get("last_modified")));
+		parameterSource.addValue("lm", toUtcNullSafe((Date) log.get("last_modified")));
 		parameterSource.addValue("ll", logLevel);
 		return parameterSource;
 	};
