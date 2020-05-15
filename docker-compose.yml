@@ -45,5 +45,4 @@ services:
       RP_ATTACH_KEEPFROM: '2000-01-01'
 
       # Mongodb params
-      RP_MONGODB_DATABASE: reportportal
-      RP_MONGODB_URI: mongodb://user:password@host:port
+      RP_MONGODB_URI: mongodb://user:password@host:port/database
