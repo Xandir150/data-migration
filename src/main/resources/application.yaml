@@ -30,7 +30,7 @@ rp:
     host: localhost
     port: 5432
     user: rpuser
-    pass: ivanbudaev4ushka
+    pass: rppass
 
   binarystore:
     path: /Users/pavel_bortnik/ReportPortal5/data/storage
