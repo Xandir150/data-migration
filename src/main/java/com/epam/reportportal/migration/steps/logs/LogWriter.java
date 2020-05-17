@@ -52,7 +52,7 @@ public class LogWriter implements ItemWriter<DBObject> {
 
 	private static final String INSERT_ATTACH =
 			"INSERT INTO attachment (id, file_id, thumbnail_id, content_type, project_id, launch_id, item_id) "
-					+ "VALUES (:id, :fid, :tid, :ct, :pr, :lnch, :item) ON CONFLICT DO NOTHING";
+					+ "VALUES (:id, :fid, null, :ct, :pr, :lnch, :item) ON CONFLICT DO NOTHING";
 
 	@Autowired
 	@Qualifier("attachmentDataStoreService")
@@ -138,22 +138,10 @@ public class LogWriter implements ItemWriter<DBObject> {
 		);
 		String targetPath = Paths.get(commonPath, fileName).toString();
 		String path = dataStoreService.save(targetPath, new ByteArrayInputStream(bytes));
-		String pathThumbnail = createThumbnail(new ByteArrayInputStream(bytes), file.getContentType(), fileName, commonPath);
 		if (path != null) {
 			attachPaths.add(path);
 		}
-		if (pathThumbnail != null) {
-			attachPaths.add(pathThumbnail);
-		}
-		return attachSourceProvider(attachId, item, file, path, pathThumbnail);
-	}
-
-	private String createThumbnail(InputStream inputStream, String contentType, String fileName, String commonPath) {
-		String thumbnailId = null;
-		if (isImage(contentType)) {
-			thumbnailId = dataStoreService.saveThumbnail(buildThumbnailFileName(commonPath, fileName), inputStream);
-		}
-		return thumbnailId;
+		return attachSourceProvider(attachId, item, file, path);
 	}
 
 	private static final ItemSqlParameterSourceProvider<DBObject> LOG_SOURCE_PROVIDER = log -> {
@@ -172,11 +160,10 @@ public class LogWriter implements ItemWriter<DBObject> {
 		return parameterSource;
 	};
 
-	private MapSqlParameterSource attachSourceProvider(int id, DBObject logFile, GridFSDBFile binary, String filePath, String thumbPath) {
+	private MapSqlParameterSource attachSourceProvider(int id, DBObject logFile, GridFSDBFile binary, String filePath) {
 		MapSqlParameterSource parameterSource = new MapSqlParameterSource();
 		parameterSource.addValue("id", id);
 		parameterSource.addValue("fid", filePath);
-		parameterSource.addValue("tid", thumbPath);
 		parameterSource.addValue("ct", binary.getContentType());
 		parameterSource.addValue("pr", logFile.get("projectId"));
 		parameterSource.addValue("lnch", logFile.get("launchId"));
