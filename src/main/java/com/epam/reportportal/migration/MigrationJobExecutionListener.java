@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
@@ -27,9 +26,6 @@ public class MigrationJobExecutionListener implements JobExecutionListener {
 
 	@Autowired
 	private DataSource dataSource;
-
-	@Autowired
-	private org.ehcache.Cache<String, IdPair> idsCache;
 
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
@@ -58,8 +54,5 @@ public class MigrationJobExecutionListener implements JobExecutionListener {
 			ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
 			databasePopulator.execute(dataSource);
 		}
-
-		AtomicInteger i = new AtomicInteger(0);
-		idsCache.forEach(it -> System.out.println(it.getKey() + " : " + i.getAndIncrement()));
 	}
 }

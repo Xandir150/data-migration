@@ -5,8 +5,6 @@ spring:
       uri: ${rp.mongodb.uri}
 
 rp:
-  cache:
-    size: 1
   items:
     batch: 5000
   grid:

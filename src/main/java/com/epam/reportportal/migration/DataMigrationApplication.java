@@ -38,7 +38,7 @@ public class DataMigrationApplication {
 
 	@Bean
 	// mongo uuid -> postgres id
-	public Cache<String, IdPair> idsCache() {
+	public Cache<String, Object> idsCache() {
 		return Caffeine.newBuilder().softValues().build();
 	}
 
