@@ -2,6 +2,13 @@ package com.epam.reportportal.migration;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import net.sf.ehcache.config.CacheConfiguration;
+import org.ehcache.CacheManager;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.CacheManagerBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.MemoryUnit;
+import org.ehcache.xml.model.ResourceUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -26,6 +33,9 @@ public class DataMigrationApplication {
 	@Value("${rp.pool.maxPoolSize}")
 	private int maxPoolSize;
 
+	@Value("${rp.cache.size}")
+	private int maxCacheSize;
+
 	@Bean
 	public Cache<String, Long> customStatisticsFieldsCache() {
 		return Caffeine.newBuilder().initialCapacity(100).maximumSize(1000).expireAfterAccess(30, TimeUnit.HOURS).build();
@@ -38,8 +48,15 @@ public class DataMigrationApplication {
 
 	@Bean
 	// mongo uuid -> postgres id
-	public Cache<String, Object> idsCache() {
-		return Caffeine.newBuilder().initialCapacity(1_000_000).maximumSize(1_000_000).expireAfterAccess(30, TimeUnit.HOURS).build();
+	public org.ehcache.Cache<String, IdPair> idsCache() {
+		final CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
+		cacheManager.init();
+		return cacheManager.createCache("myCache",
+				CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class,
+						IdPair.class,
+						ResourcePoolsBuilder.newResourcePoolsBuilder().heap(maxCacheSize, MemoryUnit.GB)
+				)
+		);
 	}
 
 	@Bean

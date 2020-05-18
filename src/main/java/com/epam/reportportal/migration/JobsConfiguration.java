@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.List;
 
@@ -18,6 +19,8 @@ import java.util.List;
 @Configuration
 @EnableBatchProcessing
 public class JobsConfiguration {
+
+	public static final String CACHE_MAPPING = "cacheMapping";
 
 	@Autowired
 	private JobBuilderFactory jobBuilderFactory;
@@ -41,8 +44,14 @@ public class JobsConfiguration {
 	@Autowired
 	private MigrationJobExecutionListener migrationJobExecutionListener;
 
+	@Autowired
+	private MongoTemplate mongoTemplate;
+
 	@Bean
 	public Job job() {
+		if (!mongoTemplate.collectionExists(CACHE_MAPPING)) {
+			mongoTemplate.createCollection(CACHE_MAPPING);
+		}
 		SimpleJobBuilder job = jobBuilderFactory.get("migrationDataJob")
 				.listener(migrationJobExecutionListener)
 				.start(migrateLaunchStep)

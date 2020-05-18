@@ -94,7 +94,7 @@ public class TestItemWriter implements ItemWriter<DBObject> {
 			String path = getPath((String) item.get("pathIds"), currentId);
 
 			testItemSrc.add(getTestItemParams(item, currentId, path));
-			cacheableDataService.putMapping(item.get("_id").toString(), currentId);
+			cacheableDataService.putIds(item.get("_id").toString(), currentId, (Long) item.get("launchId"));
 
 			itemResultsSrc.add(getItemResults(item, currentId));
 			statisticsSrc.addAll(commonItemWriter.getStatisticsParams((DBObject) item.get("statistics"), currentId));

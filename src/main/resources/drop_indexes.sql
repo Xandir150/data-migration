@@ -2,12 +2,14 @@
 
 DROP INDEX IF EXISTS launch_project_idx;
 DROP INDEX IF EXISTS launch_user_idx;
+DROP INDEX IF EXISTS launch_uuid_idx;
 
 --TEST_ITEM
 
 DROP INDEX IF EXISTS ti_parent_idx;
 DROP INDEX IF EXISTS ti_launch_idx;
 DROP INDEX IF EXISTS ti_retry_of_idx;
+DROP INDEX IF EXISTS ti_uuid_idx;
 DROP INDEX IF EXISTS test_item_unique_id_idx;
 DROP INDEX IF EXISTS item_test_case_id_idx;
 DROP INDEX IF EXISTS test_item_unique_id_launch_id_idx;

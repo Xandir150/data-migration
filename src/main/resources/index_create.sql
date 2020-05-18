@@ -8,13 +8,10 @@ CREATE INDEX IF NOT EXISTS launch_user_idx ON launch (user_id);
 CREATE INDEX IF NOT EXISTS ti_parent_idx ON test_item (parent_id NULLS LAST);
 CREATE INDEX IF NOT EXISTS ti_launch_idx ON test_item (launch_id NULLS LAST);
 CREATE INDEX IF NOT EXISTS ti_retry_of_idx ON test_item (retry_of NULLS LAST);
-CREATE INDEX IF NOT EXISTS test_item_unique_id_idx ON test_item (unique_id);
-CREATE INDEX IF NOT EXISTS item_test_case_id_idx ON test_item (test_case_id);
 CREATE INDEX IF NOT EXISTS test_item_unique_id_launch_id_idx ON test_item (unique_id, launch_id);
 CREATE INDEX IF NOT EXISTS item_test_case_id_launch_id_idx ON test_item (test_case_id, launch_id);
 CREATE INDEX IF NOT EXISTS path_gist_idx ON test_item USING gist (path);
 CREATE INDEX IF NOT EXISTS path_idx ON test_item USING btree (path);
-CREATE INDEX IF NOT EXISTS test_case_hash_idx ON test_item (test_case_hash);
 CREATE INDEX IF NOT EXISTS test_case_hash_launch_id_idx ON test_item (test_case_hash, launch_id);
 
 ALTER TABLE test_item
@@ -23,7 +20,6 @@ ALTER TABLE test_item
 --LOG
 CREATE INDEX IF NOT EXISTS log_ti_idx ON log (item_id);
 CREATE INDEX IF NOT EXISTS log_message_trgm_idx ON log USING gin (log_message gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS log_uuid_idx ON log USING hash (uuid);
 CREATE INDEX IF NOT EXISTS log_attach_id_idx ON log (attachment_id);
 ALTER TABLE log
     ADD CONSTRAINT log_check CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL)),
