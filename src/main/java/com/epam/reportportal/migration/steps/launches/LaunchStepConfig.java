@@ -30,8 +30,8 @@ public class LaunchStepConfig {
 
 	private static final int CHUNK_SIZE = 1_000;
 
-	@Value("${rp.launch.keepFrom}")
-	private String keepFrom;
+	@Value("${rp.grid.size}")
+	private int gridSize;
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
@@ -76,7 +76,7 @@ public class LaunchStepConfig {
 	public Step migrateLaunchStep() {
 		return stepBuilderFactory.get("launch")
 				.partitioner("slaveLaunchStep", datePartitioning)
-				.gridSize(6)
+				.gridSize(gridSize)
 				.step(slaveLaunchStep())
 				.taskExecutor(threadPoolTaskExecutor)
 				.listener(chunkCountListener)
