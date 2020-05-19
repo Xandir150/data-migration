@@ -32,18 +32,6 @@ public class MigrationJobExecutionListener implements JobExecutionListener {
 		ClassPathResource resource = new ClassPathResource("drop_indexes.sql");
 		ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
 		databasePopulator.execute(dataSource);
-
-		try (Connection connection = dataSource.getConnection();
-				PreparedStatement preparedStatement = connection.prepareStatement(
-						"CREATE OR REPLACE FUNCTION multi_nextval(use_seqname REGCLASS, use_increment INTEGER) RETURNS BIGINT AS\n" + "$$\n"
-								+ "DECLARE\n" + "    reply   BIGINT;\n"
-								+ "    lock_id BIGINT := (use_seqname::BIGINT - 2147483648)::INTEGER;\n" + "BEGIN\n"
-								+ "    PERFORM pg_advisory_lock(lock_id); reply := nextval(use_seqname); PERFORM setval(use_seqname, reply + use_increment - 1, TRUE);\n"
-								+ "    PERFORM pg_advisory_unlock(lock_id); RETURN reply;\n" + "END;\n" + "$$ LANGUAGE plpgsql;")) {
-			preparedStatement.execute();
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-		}
 	}
 
 	@Override

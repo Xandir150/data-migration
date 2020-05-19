@@ -30,12 +30,17 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
  */
 @Configuration
 public class LogStepConfig {
+
+	static final AtomicLong LOG_ID = new AtomicLong(1);
+	static final AtomicInteger ATTACHMENT_ID = new AtomicInteger(1);
 
 	private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 

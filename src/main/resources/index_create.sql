@@ -115,4 +115,5 @@ ANALYSE users;
 ANALYSE widget;
 ANALYSE widget_filter;
 
-DROP FUNCTION IF EXISTS multi_nextval;
+SELECT setval('test_item_item_id_seq', max(item_id)) FROM test_item;
+SELECT setval('log_id_seq', max(id)) FROM log;

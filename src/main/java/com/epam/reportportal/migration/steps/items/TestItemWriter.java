@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static com.epam.reportportal.migration.steps.items.ItemsStepConfig.TEST_ITEM_ID;
 import static com.epam.reportportal.migration.steps.items.TestProviderUtils.RETRY_SOURCE_PROVIDER;
 import static com.epam.reportportal.migration.steps.items.TestProviderUtils.TEST_SOURCE_PROVIDER;
 import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtc;
@@ -83,14 +84,11 @@ public class TestItemWriter implements ItemWriter<DBObject> {
 		List<SqlParameterSource> attributesSrc = new ArrayList<>(itemResultsSrc.size());
 		List<SqlParameterSource> paramsSrc = new ArrayList<>(itemResultsSrc.size());
 
-		final AtomicLong atomicCurrentId = new AtomicLong(jdbc.queryForObject("SELECT multi_nextval('test_item_item_id_seq', ?)",
-				Long.class,
-				items.size()
-		));
+		AtomicLong startingId = new AtomicLong(TEST_ITEM_ID.getAndAdd(items.size() + 1));
 
 		items.forEach(item -> {
 
-			Long currentId = atomicCurrentId.getAndIncrement();
+			Long currentId = startingId.getAndIncrement();
 			String path = getPath((String) item.get("pathIds"), currentId);
 
 			testItemSrc.add(getTestItemParams(item, currentId, path));
@@ -150,13 +148,10 @@ public class TestItemWriter implements ItemWriter<DBObject> {
 			return;
 		}
 
-		final AtomicLong currentRetryId = new AtomicLong(jdbc.queryForObject("SELECT multi_nextval('test_item_item_id_seq', ?)",
-				Long.class,
-				retries.size()
-		));
+		AtomicLong startingId = new AtomicLong(TEST_ITEM_ID.getAndAdd(retries.size()));
 
 		retries.stream().map(DBObject.class::cast).forEach(retry -> {
-			Long currentId = currentRetryId.getAndIncrement();
+			Long currentId = startingId.getAndIncrement();
 			MapSqlParameterSource sqlParameterSource = (MapSqlParameterSource) RETRY_SOURCE_PROVIDER.createSqlParameterSource(retry);
 			sqlParameterSource.addValue("id", currentId);
 			sqlParameterSource.addValue("par", mainItem.get("parentId"));

@@ -29,9 +29,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.epam.reportportal.migration.datastore.binary.impl.DataStoreUtils.buildThumbnailFileName;
 import static com.epam.reportportal.migration.datastore.binary.impl.DataStoreUtils.isImage;
+import static com.epam.reportportal.migration.steps.logs.LogStepConfig.ATTACHMENT_ID;
+import static com.epam.reportportal.migration.steps.logs.LogStepConfig.LOG_ID;
 import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtc;
 import static com.epam.reportportal.migration.steps.utils.MigrationUtils.toUtcNullSafe;
 
@@ -83,23 +86,21 @@ public class LogWriter implements ItemWriter<DBObject> {
 		List<String> attachPaths = new ArrayList<>(attachCount);
 		List<SqlParameterSource> attachSources = new ArrayList<>(attachCount);
 
-		final AtomicInteger atomicCurrentLogId = new AtomicInteger();
-		atomicCurrentLogId.set(jdbc.queryForObject("SELECT multi_nextval('log_id_seq', ?)", Integer.class, items.size()));
-
-		final AtomicInteger atomicCurrentAttachId = new AtomicInteger();
+		AtomicLong startingLogId = new AtomicLong(LOG_ID.getAndAdd(items.size() + 1));
+		AtomicInteger startingAttachId = new AtomicInteger();
 		if (attachCount > 0) {
-			atomicCurrentAttachId.set(jdbc.queryForObject("SELECT multi_nextval('attachment_id_seq', ?)", Integer.class, attachCount));
+			startingAttachId.set(ATTACHMENT_ID.getAndAdd(attachCount + 1));
 		}
 
 		try {
 			SqlParameterSource[] values = items.stream().map(item -> {
 
 				MapSqlParameterSource sqlParameterSource = (MapSqlParameterSource) LOG_SOURCE_PROVIDER.createSqlParameterSource(item);
-				int logId = atomicCurrentLogId.getAndIncrement();
+				long logId = startingLogId.getAndIncrement();
 				sqlParameterSource.addValue("id", logId);
 
 				if (item.get("file") != null) {
-					int attachId = atomicCurrentAttachId.getAndIncrement();
+					int attachId = startingAttachId.getAndIncrement();
 					attachSources.add(processWithAttach(attachId, item, attachPaths, logId));
 					sqlParameterSource.addValue("attachId", attachId);
 					return sqlParameterSource;
@@ -113,14 +114,14 @@ public class LogWriter implements ItemWriter<DBObject> {
 			jdbcTemplate.batchUpdate(INSERT_LOG_WITH_ATTACH, values);
 
 		} catch (DataIntegrityViolationException e) {
-			LOGGER.warn(e.getClass().toString());
+			LOGGER.warn(e.getMessage());
 			attachPaths.forEach(attach -> dataStoreService.delete(attach));
 			items.forEach(it -> it.put("logMsg", it.get("logMsg").toString().replaceAll("\u0000", "")));
 			logWriter.write(items);
 		}
 	}
 
-	private MapSqlParameterSource processWithAttach(int attachId, DBObject item, List<String> attachPaths, int logId) {
+	private MapSqlParameterSource processWithAttach(int attachId, DBObject item, List<String> attachPaths, long logId) {
 		GridFSDBFile file = (GridFSDBFile) item.get("file");
 		byte[] bytes;
 		try {

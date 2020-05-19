@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
@@ -45,8 +46,8 @@ public class ItemsStepConfig {
 
 	public static String OPTIMIZED_TEST_COLLECTION = "optimizeTest";
 
-	@Value("${rp.pool.corePoolSize}")
-	private int corePoolSize;
+	public static AtomicLong TEST_ITEM_ID = new AtomicLong(1);
+
 
 	@Value("${rp.items.batch}")
 	private int batchSize;
