@@ -3,6 +3,7 @@ package com.epam.reportportal.migration.steps.launches;
 import com.epam.reportportal.migration.steps.CommonItemWriter;
 import com.epam.reportportal.migration.steps.utils.CacheableDataService;
 import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -59,7 +60,11 @@ public class LaunchItemWriter implements ItemWriter<DBObject> {
 						LaunchProviderUtils.LAUNCH_SOURCE_PROVIDER.createSqlParameterSource(it),
 						Long.class
 				);
-				cacheableDataService.putMapping(it.get("_id").toString(), id);
+				BasicDBObject dbObject = new BasicDBObject();
+				dbObject.put("launchId", id);
+				dbObject.put("launchName", it.get("name"));
+				dbObject.put("projectId", it.get("projectId"));
+				cacheableDataService.put(it.get("_id").toString(), dbObject);
 				attributes.addAll(commonItemWriter.getAttributes((BasicDBList) it.get("tags"), id));
 				statistics.addAll(commonItemWriter.getStatisticsParams((DBObject) it.get("statistics"), id));
 			} catch (Exception e) {

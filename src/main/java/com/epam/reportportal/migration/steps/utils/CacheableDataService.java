@@ -36,7 +36,7 @@ public class CacheableDataService {
 
 	private static final String SELECT_ACL_SID = "SELECT id FROM acl_sid WHERE sid = :name";
 
-	private static final String SELECT_LAUNCH_ID = "SELECT id FROM launch WHERE launch.uuid = :uid";
+	private static final String SELECT_LAUNCH_ID = "SELECT id, project_id, name FROM launch WHERE launch.uuid = :uid";
 
 	private static final String SELECT_ITEM_ID = "SELECT item_id FROM test_item WHERE test_item.uuid = :uid";
 
@@ -56,6 +56,13 @@ public class CacheableDataService {
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
+
+
+	public void put(String objectId, Object obj) {
+		if (objectId != null && obj != null) {
+			idsCache.put(objectId, obj);
+		}
+	}
 
 	public void putMapping(String objectId, Long postgresId) {
 		if (objectId != null && postgresId != null) {
@@ -103,14 +110,25 @@ public class CacheableDataService {
 		return userId;
 	}
 
-	public Long retrieveLaunchId(String launchRef) {
+	public DBObject retrieveLaunchId(String launchRef) {
 		if (launchRef == null) {
 			return null;
 		}
-		Long launchId = (Long) idsCache.getIfPresent(launchRef);
+		DBObject launchId = (DBObject) idsCache.getIfPresent(launchRef);
 		if (launchId == null) {
 			try {
-				launchId = jdbcTemplate.queryForObject(SELECT_LAUNCH_ID, Collections.singletonMap("uid", launchRef), Long.class);
+				launchId = jdbcTemplate.query(SELECT_LAUNCH_ID, Collections.singletonMap("uid", launchRef), (ResultSetExtractor<DBObject>) rs -> {
+					BasicDBObject dbObject = new BasicDBObject();
+					if (rs.next()) {
+						dbObject.put("launchId", rs.getLong("id"));
+						dbObject.put("launchName", rs.getString("name"));
+						dbObject.put("projectId", rs.getLong("project_id"));
+					} else {
+						throw new EmptyResultDataAccessException(1);
+					}
+					return dbObject;
+				});
+
 				idsCache.put(launchRef, launchId);
 			} catch (EmptyResultDataAccessException e) {
 				LOGGER.debug(String.format("Launch with uuid '%s' not found. It is ignored.", launchRef));
