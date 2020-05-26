@@ -78,7 +78,6 @@ public class TestItemProcessor implements ItemProcessor<DBObject, DBObject> {
 
 	private void generateNewUniqueId(DBObject item) {
 		String forEncoding = prepareForEncoding(item);
-		System.out.println(forEncoding);
 		String uniqueId = TRAIT + DigestUtils.md5Hex(forEncoding);
 		item.put("uniqueId", uniqueId);
 	}
