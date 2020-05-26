@@ -21,10 +21,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static com.epam.reportportal.migration.steps.items.ItemsStepConfig.OPTIMIZED_TEST_COLLECTION;
-import static java.util.stream.Collectors.toList;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
@@ -77,6 +78,7 @@ public class TestItemProcessor implements ItemProcessor<DBObject, DBObject> {
 
 	private void generateNewUniqueId(DBObject item) {
 		String forEncoding = prepareForEncoding(item);
+		System.out.println(forEncoding);
 		String uniqueId = TRAIT + DigestUtils.md5Hex(forEncoding);
 		item.put("uniqueId", uniqueId);
 	}
@@ -94,10 +96,12 @@ public class TestItemProcessor implements ItemProcessor<DBObject, DBObject> {
 		joiner.add(itemName);
 		BasicDBList parameters = (BasicDBList) item.get("parameters");
 		if (!CollectionUtils.isEmpty(parameters)) {
-			joiner.add(parameters.stream()
+			Set<Parameter> params = parameters.stream()
 					.map(p -> (DBObject) p)
-					.map(parameter -> (!Strings.isNullOrEmpty((String) parameter.get("key")) ? parameter.get("key") + "=" : "")
-							+ parameter.get("value"))
+					.map(p -> new Parameter((String) p.get("key"), (String) p.get("value")))
+					.collect(Collectors.toSet());
+			joiner.add(params.stream()
+					.map(parameter -> (!Strings.isNullOrEmpty(parameter.getKey()) ? parameter.getKey() + "=" : "") + parameter.getValue())
 					.collect(Collectors.joining(",")));
 		}
 		return joiner.toString();
@@ -185,10 +189,10 @@ public class TestItemProcessor implements ItemProcessor<DBObject, DBObject> {
 	public List<String> findPathNames(Iterable<String> path) {
 		Query q = query(where("_id").in(toObjId(path)));
 		q.fields().include("name");
-		return mongoOperations.find(q, DBObject.class, OPTIMIZED_TEST_COLLECTION)
+		return new ArrayList<>(mongoOperations.find(q, DBObject.class, OPTIMIZED_TEST_COLLECTION)
 				.stream()
-				.map(it -> (String) it.get("name"))
-				.collect(toList());
+				.collect(toLinkedMap(it -> it.get("_id"), it -> (String) it.get("name")))
+				.values());
 	}
 
 	;
@@ -199,5 +203,12 @@ public class TestItemProcessor implements ItemProcessor<DBObject, DBObject> {
 			ids.add(new ObjectId(id));
 		}
 		return ids;
+	}
+
+	public static <T, K, U> Collector<T, ?, Map<K, U>> toLinkedMap(Function<? super T, ? extends K> keyMapper,
+			Function<? super T, ? extends U> valueMapper) {
+		return Collectors.toMap(keyMapper, valueMapper, (u, v) -> {
+			throw new IllegalStateException(String.format("Duplicate key %s", u));
+		}, LinkedHashMap::new);
 	}
 }
