@@ -114,7 +114,7 @@ public class LogWriter implements ItemWriter<DBObject> {
 			jdbcTemplate.batchUpdate(INSERT_LOG_WITH_ATTACH, values);
 
 		} catch (DataIntegrityViolationException e) {
-			LOGGER.warn(e.getCause().toString());
+			LOGGER.warn(e.getClass().toString());
 			attachPaths.forEach(attach -> dataStoreService.delete(attach));
 			items.forEach(it -> it.put("logMsg", it.get("logMsg").toString().replaceAll("\u0000", "")));
 			logWriter.write(items);
