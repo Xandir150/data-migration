@@ -14,7 +14,7 @@ public class ChunkCountListener implements ChunkListener {
 
 	private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
-	private int loggingInterval = 10_000;
+	private int loggingInterval = 20_000;
 
 	@Override
 	public void beforeChunk(ChunkContext context) {

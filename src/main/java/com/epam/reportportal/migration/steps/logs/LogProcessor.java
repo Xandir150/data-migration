@@ -1,6 +1,5 @@
 package com.epam.reportportal.migration.steps.logs;
 
-import com.epam.reportportal.migration.IdPair;
 import com.epam.reportportal.migration.steps.utils.CacheableDataService;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -71,12 +70,11 @@ public class LogProcessor implements ItemProcessor<DBObject, DBObject> {
 	}
 
 	private DBObject retrieveIds(DBObject log) {
-		IdPair ids = cacheableDataService.retrieveIds((String) log.get("testItemRef"));
+		DBObject ids = cacheableDataService.retrieveIds((String) log.get("testItemRef"));
 		if (ids == null) {
 			return null;
 		}
-		log.put("itemId", ids.getItemId());
-		log.put("launchId", ids.getLaunchId());
+		log.putAll(ids);
 		return log;
 	}
 }

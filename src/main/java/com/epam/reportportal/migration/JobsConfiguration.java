@@ -49,9 +49,6 @@ public class JobsConfiguration {
 
 	@Bean
 	public Job job() {
-		if (!mongoTemplate.collectionExists(CACHE_MAPPING)) {
-			mongoTemplate.createCollection(CACHE_MAPPING);
-		}
 		SimpleJobBuilder job = jobBuilderFactory.get("migrationDataJob")
 				.listener(migrationJobExecutionListener)
 				.start(migrateLaunchStep)

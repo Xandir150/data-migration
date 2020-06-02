@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
@@ -28,26 +27,11 @@ public class MigrationJobExecutionListener implements JobExecutionListener {
 	@Autowired
 	private DataSource dataSource;
 
-	@Autowired
-	private org.ehcache.Cache<String, IdPair> idsCache;
-
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
 		ClassPathResource resource = new ClassPathResource("drop_indexes.sql");
 		ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
 		databasePopulator.execute(dataSource);
-
-		try (Connection connection = dataSource.getConnection();
-				PreparedStatement preparedStatement = connection.prepareStatement(
-						"CREATE OR REPLACE FUNCTION multi_nextval(use_seqname REGCLASS, use_increment INTEGER) RETURNS BIGINT AS\n" + "$$\n"
-								+ "DECLARE\n" + "    reply   BIGINT;\n"
-								+ "    lock_id BIGINT := (use_seqname::BIGINT - 2147483648)::INTEGER;\n" + "BEGIN\n"
-								+ "    PERFORM pg_advisory_lock(lock_id); reply := nextval(use_seqname); PERFORM setval(use_seqname, reply + use_increment - 1, TRUE);\n"
-								+ "    PERFORM pg_advisory_unlock(lock_id); RETURN reply;\n" + "END;\n" + "$$ LANGUAGE plpgsql;")) {
-			preparedStatement.execute();
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-		}
 	}
 
 	@Override
@@ -58,8 +42,8 @@ public class MigrationJobExecutionListener implements JobExecutionListener {
 			ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
 			databasePopulator.execute(dataSource);
 		}
-
-		AtomicInteger i = new AtomicInteger(0);
-		idsCache.forEach(it -> System.out.println(it.getKey() + " : " + i.getAndIncrement()));
+		ClassPathResource resource = new ClassPathResource("update_seq.sql");
+		ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
+		databasePopulator.execute(dataSource);
 	}
 }

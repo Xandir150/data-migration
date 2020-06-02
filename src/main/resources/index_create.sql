@@ -114,5 +114,3 @@ ANALYSE user_preference;
 ANALYSE users;
 ANALYSE widget;
 ANALYSE widget_filter;
-
-DROP FUNCTION IF EXISTS multi_nextval;

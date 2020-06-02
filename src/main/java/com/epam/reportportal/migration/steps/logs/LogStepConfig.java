@@ -20,22 +20,29 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
  */
 @Configuration
 public class LogStepConfig {
+
+	static final AtomicLong LOG_ID = new AtomicLong(1);
+	static final AtomicInteger ATTACHMENT_ID = new AtomicInteger(1);
 
 	private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
@@ -53,6 +60,9 @@ public class LogStepConfig {
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
 	private StepBuilderFactory stepBuilderFactory;
@@ -123,6 +133,13 @@ public class LogStepConfig {
 	}
 
 	private void prepareCollectionForReading() {
+
+		try {
+			LOG_ID.set(jdbcTemplate.queryForObject("SELECT nextval('log_id_seq') FROM log;", Long.class));
+			ATTACHMENT_ID.set(jdbcTemplate.queryForObject("SELECT nextval('attachment_id_seq') FROM attachment;", Integer.class));
+		} catch (EmptyResultDataAccessException e) {
+		}
+
 		if (mongoTemplate.getCollection("log")
 				.getIndexInfo()
 				.stream()

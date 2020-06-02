@@ -19,6 +19,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -26,6 +27,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexDefinition;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.time.LocalDate;
@@ -34,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
@@ -45,8 +48,8 @@ public class ItemsStepConfig {
 
 	public static String OPTIMIZED_TEST_COLLECTION = "optimizeTest";
 
-	@Value("${rp.pool.corePoolSize}")
-	private int corePoolSize;
+	public static AtomicLong TEST_ITEM_ID = new AtomicLong(1);
+
 
 	@Value("${rp.items.batch}")
 	private int batchSize;
@@ -56,6 +59,9 @@ public class ItemsStepConfig {
 
 	@Autowired
 	private StepBuilderFactory stepBuilderFactory;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
@@ -164,6 +170,11 @@ public class ItemsStepConfig {
 	}
 
 	private void prepareCollectionForMigration() {
+		try {
+			TEST_ITEM_ID.set(jdbcTemplate.queryForObject("SELECT nextval('test_item_item_id_seq') FROM test_item;", Long.class));
+		} catch (EmptyResultDataAccessException e) {
+
+		}
 		prepareIndexTestItemStartTime();
 		prepareOptimizedTestItemCollection();
 		prepareIndexOptimizedPath();
