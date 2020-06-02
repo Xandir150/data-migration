@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
@@ -133,8 +134,11 @@ public class LogStepConfig {
 
 	private void prepareCollectionForReading() {
 
-		LOG_ID.set(jdbcTemplate.queryForObject("SELECT nextval('log_id_seq') FROM log;", Long.class));
-		ATTACHMENT_ID.set(jdbcTemplate.queryForObject("SELECT nextval('attachment_id_seq') FROM attachment;", Integer.class));
+		try {
+			LOG_ID.set(jdbcTemplate.queryForObject("SELECT nextval('log_id_seq') FROM log;", Long.class));
+			ATTACHMENT_ID.set(jdbcTemplate.queryForObject("SELECT nextval('attachment_id_seq') FROM attachment;", Integer.class));
+		} catch (EmptyResultDataAccessException e) {
+		}
 
 		if (mongoTemplate.getCollection("log")
 				.getIndexInfo()

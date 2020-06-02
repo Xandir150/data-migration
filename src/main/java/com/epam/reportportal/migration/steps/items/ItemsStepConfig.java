@@ -19,6 +19,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -169,7 +170,11 @@ public class ItemsStepConfig {
 	}
 
 	private void prepareCollectionForMigration() {
-		TEST_ITEM_ID.set(jdbcTemplate.queryForObject("SELECT nextval('test_item_item_id_seq') FROM test_item;", Long.class));
+		try {
+			TEST_ITEM_ID.set(jdbcTemplate.queryForObject("SELECT nextval('test_item_item_id_seq') FROM test_item;", Long.class));
+		} catch (EmptyResultDataAccessException e) {
+
+		}
 		prepareIndexTestItemStartTime();
 		prepareOptimizedTestItemCollection();
 		prepareIndexOptimizedPath();
