@@ -42,5 +42,8 @@ public class MigrationJobExecutionListener implements JobExecutionListener {
 			ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
 			databasePopulator.execute(dataSource);
 		}
+		ClassPathResource resource = new ClassPathResource("update_seq.sql");
+		ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
+		databasePopulator.execute(dataSource);
 	}
 }

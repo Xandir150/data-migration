@@ -26,6 +26,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexDefinition;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.time.LocalDate;
@@ -57,6 +58,9 @@ public class ItemsStepConfig {
 
 	@Autowired
 	private StepBuilderFactory stepBuilderFactory;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
@@ -165,6 +169,7 @@ public class ItemsStepConfig {
 	}
 
 	private void prepareCollectionForMigration() {
+		TEST_ITEM_ID.set(jdbcTemplate.queryForObject("SELECT nextval('test_item_item_id_seq') FROM test_item;", Long.class));
 		prepareIndexTestItemStartTime();
 		prepareOptimizedTestItemCollection();
 		prepareIndexOptimizedPath();

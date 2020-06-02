@@ -114,7 +114,3 @@ ANALYSE user_preference;
 ANALYSE users;
 ANALYSE widget;
 ANALYSE widget_filter;
-
-SELECT setval('test_item_item_id_seq', max(item_id)) FROM test_item;
-SELECT setval('log_id_seq', max(id)) FROM log;
-SELECT setval('attachment_id_seq', max(id)) FROM attachment;

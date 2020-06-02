@@ -25,6 +25,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -58,6 +59,9 @@ public class LogStepConfig {
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
 	private StepBuilderFactory stepBuilderFactory;
@@ -128,6 +132,10 @@ public class LogStepConfig {
 	}
 
 	private void prepareCollectionForReading() {
+
+		LOG_ID.set(jdbcTemplate.queryForObject("SELECT nextval('log_id_seq') FROM log;", Long.class));
+		ATTACHMENT_ID.set(jdbcTemplate.queryForObject("SELECT nextval('attachment_id_seq') FROM attachment;", Integer.class));
+
 		if (mongoTemplate.getCollection("log")
 				.getIndexInfo()
 				.stream()
