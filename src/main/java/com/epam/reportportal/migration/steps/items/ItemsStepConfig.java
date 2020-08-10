@@ -171,7 +171,7 @@ public class ItemsStepConfig {
 
 	private void prepareCollectionForMigration() {
 		try {
-			TEST_ITEM_ID.set(jdbcTemplate.queryForObject("SELECT nextval('test_item_item_id_seq') FROM test_item;", Long.class));
+			TEST_ITEM_ID.set(jdbcTemplate.queryForObject("SELECT nextval('test_item_item_id_seq');", Long.class));
 		} catch (EmptyResultDataAccessException e) {
 
 		}

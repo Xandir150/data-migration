@@ -135,8 +135,8 @@ public class LogStepConfig {
 	private void prepareCollectionForReading() {
 
 		try {
-			LOG_ID.set(jdbcTemplate.queryForObject("SELECT nextval('log_id_seq') FROM log;", Long.class));
-			ATTACHMENT_ID.set(jdbcTemplate.queryForObject("SELECT nextval('attachment_id_seq') FROM attachment;", Integer.class));
+			LOG_ID.set(jdbcTemplate.queryForObject("SELECT nextval('log_id_seq');", Long.class));
+			ATTACHMENT_ID.set(jdbcTemplate.queryForObject("SELECT nextval('attachment_id_seq');", Integer.class));
 		} catch (EmptyResultDataAccessException e) {
 		}
 
