@@ -2,6 +2,7 @@ package com.epam.reportportal.migration.steps.pref;
 
 import com.epam.reportportal.migration.steps.utils.CacheableDataService;
 import com.epam.reportportal.migration.steps.utils.MigrationUtils;
+import com.google.common.collect.Lists;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -14,6 +15,7 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -54,9 +56,14 @@ public class PreferencesConfig {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
+	@Value("${rp.project}")
+	private String projectName;
+
 	@Bean
 	public MongoItemReader<DBObject> preferencesReader() {
 		MongoItemReader<DBObject> user = MigrationUtils.getMongoItemReader(mongoTemplate, "userPreference");
+		user.setQuery("{projectRef : ?0}");
+		user.setParameterValues(Lists.newArrayList(projectName));
 		user.setPageSize(CHUNK_SIZE);
 		return user;
 	}

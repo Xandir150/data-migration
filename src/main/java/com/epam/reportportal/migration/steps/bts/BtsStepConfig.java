@@ -2,6 +2,7 @@ package com.epam.reportportal.migration.steps.bts;
 
 import com.epam.reportportal.migration.steps.utils.CacheableDataService;
 import com.epam.reportportal.migration.steps.utils.MigrationUtils;
+import com.google.common.collect.Lists;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -53,6 +55,9 @@ public class BtsStepConfig {
 	@Autowired
 	private CacheableDataService cacheableDataService;
 
+	@Value("${rp.project}")
+	private String projectName;
+
 	@Bean
 	public Map<String, Long> btsIdMapping() {
 		Map<String, Long> mapping = new HashMap<>(2);
@@ -67,7 +72,8 @@ public class BtsStepConfig {
 			return () -> null;
 		}
 		MongoItemReader<DBObject> itemReader = MigrationUtils.getMongoItemReader(mongoTemplate, "externalSystem");
-		itemReader.setQuery("{'externalSystemType' : {$in : ['JIRA', 'RALLY']}}");
+		itemReader.setQuery("{ $and : [{'externalSystemType' : {$in : ['JIRA', 'RALLY']}}, { projectRef : ?0 }]}");
+		itemReader.setParameterValues(Lists.newArrayList(projectName));
 		itemReader.setPageSize(CHUNK_SIZE);
 		return itemReader;
 	}

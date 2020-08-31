@@ -3,6 +3,7 @@ package com.epam.reportportal.migration.steps.shareable.widget;
 import com.epam.reportportal.migration.steps.shareable.ShareableUtilService;
 import com.epam.reportportal.migration.steps.utils.MigrationUtils;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -13,6 +14,7 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -109,6 +111,10 @@ public class WidgetStepConfig {
 	@Autowired
 	private ShareableUtilService shareableUtilService;
 
+
+	@Value("${rp.project}")
+	private String projectName;
+
 	@PostConstruct
 	public void initialQueries() {
 		try {
@@ -129,6 +135,8 @@ public class WidgetStepConfig {
 	@Bean
 	public MongoItemReader<DBObject> widgetItemReader() {
 		MongoItemReader<DBObject> reader = MigrationUtils.getMongoItemReader(mongoTemplate, "widget");
+		reader.setQuery("{projectName : ?0}");
+		reader.setParameterValues(Lists.newArrayList(projectName));
 		reader.setPageSize(CHUNK_SIZE);
 		return reader;
 	}

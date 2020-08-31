@@ -1,6 +1,7 @@
 package com.epam.reportportal.migration.steps.projects;
 
 import com.epam.reportportal.migration.steps.utils.MigrationUtils;
+import com.google.common.collect.Lists;
 import com.mongodb.DBObject;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.Step;
@@ -10,11 +11,14 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,9 +52,14 @@ public class ProjectStepConfig {
 	@Autowired
 	private TaskExecutor threadPoolTaskExecutor;
 
+	@Value("${rp.project}")
+	private String projectName;
+
 	@Bean
 	public MongoItemReader<DBObject> projectMongoItemReader() {
 		MongoItemReader<DBObject> project = MigrationUtils.getMongoItemReader(mongoTemplate, "project");
+		project.setQuery("{_id : ?0}");
+		project.setParameterValues(Lists.newArrayList(projectName));
 		project.setPageSize(CHUNK_SIZE);
 		return project;
 	}

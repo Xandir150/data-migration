@@ -1,6 +1,7 @@
 package com.epam.reportportal.migration.steps.utils;
 
 import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -38,10 +39,16 @@ public class MigrationUtils {
 		mongoItemReader.setTemplate(mongoTemplate);
 		mongoItemReader.setTargetType(DBObject.class);
 		mongoItemReader.setCollection(collection);
-		mongoItemReader.setSort(new HashMap<String, Sort.Direction>() {{
+		mongoItemReader.setSort(new HashMap<>() {{
 			put("_id", Sort.Direction.ASC);
 		}});
 		mongoItemReader.setQuery("{}");
+		return mongoItemReader;
+	}
+
+	public static MongoItemReader<DBObject> getMongoItemReader(MongoTemplate mongoTemplate, String collection, String query) {
+		MongoItemReader<DBObject> mongoItemReader = getMongoItemReader(mongoTemplate, collection);
+		mongoItemReader.setQuery(query);
 		return mongoItemReader;
 	}
 }

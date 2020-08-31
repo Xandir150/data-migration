@@ -1,6 +1,7 @@
 package com.epam.reportportal.migration.steps.shareable.filter;
 
 import com.epam.reportportal.migration.steps.utils.MigrationUtils;
+import com.google.common.collect.Lists;
 import com.mongodb.DBObject;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.Step;
@@ -9,6 +10,7 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -46,12 +48,17 @@ public class FilterStepConfig {
 	@Autowired
 	private ItemWriter<DBObject> filterWriter;
 
+	@Value("${rp.project}")
+	private String projectName;
+
 	@Bean
 	public MongoItemReader<DBObject> filterItemReader() {
 		executeInitialQueries();
-		MongoItemReader<DBObject> project = MigrationUtils.getMongoItemReader(mongoTemplate, "userFilter");
-		project.setPageSize(CHUNK_SIZE);
-		return project;
+		MongoItemReader<DBObject> reader = MigrationUtils.getMongoItemReader(mongoTemplate, "userFilter");
+		reader.setQuery("{projectName : ?0}");
+		reader.setParameterValues(Lists.newArrayList(projectName));
+		reader.setPageSize(CHUNK_SIZE);
+		return reader;
 	}
 
 	private void executeInitialQueries() {

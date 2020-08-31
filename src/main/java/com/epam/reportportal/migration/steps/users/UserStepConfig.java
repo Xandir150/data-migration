@@ -1,6 +1,8 @@
 package com.epam.reportportal.migration.steps.users;
 
 import com.epam.reportportal.migration.steps.utils.MigrationUtils;
+import com.google.common.collect.Lists;
+import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.Step;
@@ -15,10 +17,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.Collections;
 import java.util.Date;
 
 /**
@@ -48,12 +51,17 @@ public class UserStepConfig {
 	@Autowired
 	private TaskExecutor threadPoolTaskExecutor;
 
+	@Value("${rp.project}")
+	private String projectName;
+
 	@Bean
 	public MongoItemReader<DBObject> userMongoItemReader() {
 		Date fromDate = Date.from(LocalDate.parse(keepFrom).atStartOfDay(ZoneOffset.UTC).toInstant());
+		DBObject project = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(projectName)), DBObject.class, "project");
+		Object[] users = ((BasicDBList) project.get("users")).stream().map(it -> ((DBObject) it).get("login")).toArray();
 		MongoItemReader<DBObject> user = MigrationUtils.getMongoItemReader(mongoTemplate, "user");
-		user.setQuery("{'metaInfo.lastLogin' : {$gte : ?0}})");
-		user.setParameterValues(Collections.singletonList(fromDate));
+		user.setQuery("{ $and : [ {'metaInfo.lastLogin' : {$gte : ?0}}, { _id : {$in : ?1}} ]}");
+		user.setParameterValues(Lists.newArrayList(fromDate, users));
 		user.setPageSize(CHUNK_SIZE);
 		return user;
 	}
