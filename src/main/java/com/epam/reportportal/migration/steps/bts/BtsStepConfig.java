@@ -1,6 +1,6 @@
 package com.epam.reportportal.migration.steps.bts;
 
-import com.epam.reportportal.migration.steps.utils.CacheableDataService;
+import com.epam.reportportal.migration.steps.CacheableDataService;
 import com.epam.reportportal.migration.steps.utils.MigrationUtils;
 import com.google.common.collect.Lists;
 import com.mongodb.BasicDBObject;
@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -55,10 +56,6 @@ public class BtsStepConfig {
 	@Autowired
 	private CacheableDataService cacheableDataService;
 
-	@Value("${rp.project}")
-	private String projectName;
-
-	@Bean
 	public Map<String, Long> btsIdMapping() {
 		Map<String, Long> mapping = new HashMap<>(2);
 		mapIntegrationType(mapping, "jira");
@@ -66,8 +63,7 @@ public class BtsStepConfig {
 		return mapping;
 	}
 
-	@Bean
-	public ItemReader<DBObject> btsMongoReader() {
+	public ItemReader<DBObject> btsMongoReader(String projectName) {
 		if (btsIdMapping().isEmpty()) {
 			return () -> null;
 		}
@@ -115,8 +111,9 @@ public class BtsStepConfig {
 	}
 
 	@Bean
-	public Step migrateBtsStep() {
-		return stepBuilderFactory.get("bts").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(btsMongoReader())
+	@Scope(value = "prototype")
+	public Step migrateBtsStep(String projectName) {
+		return stepBuilderFactory.get("bts").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(btsMongoReader(projectName))
 				.processor(btsItemProcessor())
 				.writer(btsItemWriter)
 				.listener(chunkCountListener)

@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 @Configuration
 public class SettingsConfig {
 
-	private static final String INSERT_SERVER_SETTINGS = "INSERT INTO server_settings (key, value) VALUES (?,?)";
-	static final String INSERT_INTEGRATION = "INSERT INTO integration (name, type, enabled, params, creator) VALUES (:nm,:tp,:en,:par::JSONB,:cr) RETURNING id";
+	private static final String INSERT_SERVER_SETTINGS = "INSERT INTO server_settings (key, value) VALUES (?,?) ON CONFLICT DO NOTHING";
+	static final String INSERT_INTEGRATION = "INSERT INTO integration (name, type, enabled, params, creator) VALUES (:nm,:tp,:en,:par::JSONB,:cr) ON CONFLICT DO NOTHING";
 	private static final Long EMAIL_INTEGRAION_ID = 2L;
 
 	@Autowired
@@ -56,14 +56,12 @@ public class SettingsConfig {
 
 	@Bean
 	public ItemWriter<? super DBObject> settingsWriter() {
-		return items -> {
-			items.forEach(item -> {
-				writeEmailIntegration(item);
-				writeServerSettings(item);
-				writeGithubSettings(item);
-				writeSaml(item);
-			});
-		};
+		return items -> items.forEach(item -> {
+			writeEmailIntegration(item);
+			writeServerSettings(item);
+//				writeGithubSettings(item);
+//				writeSaml(item);
+		});
 	}
 
 	private void writeSaml(DBObject item) {
@@ -143,7 +141,7 @@ public class SettingsConfig {
 				creator = serverEmailDetails.get("from");
 			}
 			paramsSource.addValue("cr", Optional.ofNullable(creator).orElse(""));
-			namedParameterJdbcTemplate.queryForObject(INSERT_INTEGRATION, paramsSource, Long.class);
+			namedParameterJdbcTemplate.update(INSERT_INTEGRATION, paramsSource);
 		}
 	}
 

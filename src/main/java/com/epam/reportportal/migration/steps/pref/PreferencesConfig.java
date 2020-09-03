@@ -1,6 +1,6 @@
 package com.epam.reportportal.migration.steps.pref;
 
-import com.epam.reportportal.migration.steps.utils.CacheableDataService;
+import com.epam.reportportal.migration.steps.CacheableDataService;
 import com.epam.reportportal.migration.steps.utils.MigrationUtils;
 import com.google.common.collect.Lists;
 import com.mongodb.BasicDBList;
@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.CollectionUtils;
@@ -56,11 +57,7 @@ public class PreferencesConfig {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
-	@Value("${rp.project}")
-	private String projectName;
-
-	@Bean
-	public MongoItemReader<DBObject> preferencesReader() {
+	public MongoItemReader<DBObject> preferencesReader(String projectName) {
 		MongoItemReader<DBObject> user = MigrationUtils.getMongoItemReader(mongoTemplate, "userPreference");
 		user.setQuery("{projectRef : ?0}");
 		user.setParameterValues(Lists.newArrayList(projectName));
@@ -119,8 +116,9 @@ public class PreferencesConfig {
 	}
 
 	@Bean
-	public Step migratePreferencesStep() {
-		return stepBuilderFactory.get("preferences").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(preferencesReader())
+	@Scope(value = "prototype")
+	public Step migratePreferencesStep(String projectName) {
+		return stepBuilderFactory.get("preferences").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(preferencesReader(projectName))
 				.processor(preferencesProcessor())
 				.writer(preferencesWriter())
 				.listener(chunkCountListener)

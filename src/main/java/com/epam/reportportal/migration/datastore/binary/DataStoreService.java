@@ -26,4 +26,6 @@ public interface DataStoreService {
 	String save(String fileName, InputStream data);
 
 	String saveThumbnail(String fileName, InputStream data);
+
+	void delete(String fileId);
 }

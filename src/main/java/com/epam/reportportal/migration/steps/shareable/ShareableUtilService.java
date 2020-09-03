@@ -1,6 +1,6 @@
 package com.epam.reportportal.migration.steps.shareable;
 
-import com.epam.reportportal.migration.steps.utils.CacheableDataService;
+import com.epam.reportportal.migration.steps.CacheableDataService;
 import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import org.springframework.beans.factory.annotation.Autowired;

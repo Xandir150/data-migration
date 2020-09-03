@@ -51,6 +51,17 @@ public class MinioDataStore implements DataStore {
 	}
 
 	@Override
+	public void delete(String filePath) {
+		MinioFile minioFile = getMinioFile(filePath);
+		try {
+			minioClient.removeObject(minioFile.getBucket(), minioFile.getFilePath());
+		} catch (Exception e) {
+			LOGGER.error("Unable to delete file ", e);
+			throw new RuntimeException("Unable to delete file");
+		}
+	}
+
+	@Override
 	public String save(String filePath, InputStream inputStream) {
 		MinioFile minioFile = getMinioFile(filePath);
 		try {

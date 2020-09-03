@@ -42,5 +42,10 @@ public abstract class CommonDataStoreService implements DataStoreService {
 	}
 
 	@Override
+	public void delete(String fileId) {
+		dataStore.delete(dataEncoder.decode(fileId));
+	}
+
+	@Override
 	public abstract String saveThumbnail(String fileName, InputStream data);
 }

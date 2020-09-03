@@ -66,4 +66,18 @@ public class LocalDataStore implements DataStore {
 			throw new RuntimeException("Unable to save log file");
 		}
 	}
+
+	@Override
+	public void delete(String filePath) {
+
+		try {
+
+			Files.deleteIfExists(Paths.get(filePath));
+		} catch (IOException e) {
+
+			logger.error("Unable to delete file ", e);
+
+			throw new RuntimeException("Unable to delete log file");
+		}
+	}
 }

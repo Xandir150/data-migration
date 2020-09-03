@@ -12,6 +12,9 @@ import java.util.Map;
 public class DatePartitioner {
 
 	public static Map<String, ExecutionContext> prepareExecutionContext(int gridSize, Date minDate, Date maxDate) {
+		if (minDate == null || maxDate == null) {
+			return new HashMap<>();
+		}
 		long targetSize = (maxDate.getTime() - minDate.getTime()) / gridSize + 1;
 		Map<String, ExecutionContext> result = new HashMap<>();
 		int number = 0;

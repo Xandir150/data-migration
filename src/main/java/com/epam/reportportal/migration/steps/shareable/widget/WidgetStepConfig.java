@@ -10,12 +10,14 @@ import com.mongodb.DBObject;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -111,10 +113,6 @@ public class WidgetStepConfig {
 	@Autowired
 	private ShareableUtilService shareableUtilService;
 
-
-	@Value("${rp.project}")
-	private String projectName;
-
 	@PostConstruct
 	public void initialQueries() {
 		try {
@@ -132,8 +130,7 @@ public class WidgetStepConfig {
 		}
 	}
 
-	@Bean
-	public MongoItemReader<DBObject> widgetItemReader() {
+	public MongoItemReader<DBObject> widgetItemReader(String projectName) {
 		MongoItemReader<DBObject> reader = MigrationUtils.getMongoItemReader(mongoTemplate, "widget");
 		reader.setQuery("{projectName : ?0}");
 		reader.setParameterValues(Lists.newArrayList(projectName));
@@ -142,8 +139,9 @@ public class WidgetStepConfig {
 	}
 
 	@Bean("migrateWidgetStep")
-	public Step migrateWidgetStep() {
-		return stepBuilderFactory.get("widget").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(widgetItemReader())
+	@Scope(value = "prototype")
+	public Step migrateWidgetStep(String projectName) {
+		return stepBuilderFactory.get("widget").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(widgetItemReader(projectName))
 				.processor(widgetProcessor())
 				.writer(widgetWriter)
 				.listener(chunkCountListener)

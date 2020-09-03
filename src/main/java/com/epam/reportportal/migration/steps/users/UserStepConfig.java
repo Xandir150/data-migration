@@ -7,6 +7,7 @@ import com.mongodb.DBObject;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -51,13 +53,9 @@ public class UserStepConfig {
 	@Autowired
 	private TaskExecutor threadPoolTaskExecutor;
 
-	@Value("${rp.project}")
-	private String projectName;
-
-	@Bean
-	public MongoItemReader<DBObject> userMongoItemReader() {
+	public MongoItemReader<DBObject> userMongoItemReader(String projectNm) {
 		Date fromDate = Date.from(LocalDate.parse(keepFrom).atStartOfDay(ZoneOffset.UTC).toInstant());
-		DBObject project = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(projectName)), DBObject.class, "project");
+		DBObject project = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(projectNm)), DBObject.class, "project");
 		Object[] users = ((BasicDBList) project.get("users")).stream().map(it -> ((DBObject) it).get("login")).toArray();
 		MongoItemReader<DBObject> user = MigrationUtils.getMongoItemReader(mongoTemplate, "user");
 		user.setQuery("{ $and : [ {'metaInfo.lastLogin' : {$gte : ?0}}, { _id : {$in : ?1}} ]}");
@@ -67,14 +65,10 @@ public class UserStepConfig {
 	}
 
 	@Bean
-	public ItemProcessor<DBObject, DBObject> userItemProcessor() {
-		return item -> item;
-	}
-
-	@Bean
-	public Step migrateUsersStep() {
-		return stepBuilderFactory.get("user").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(userMongoItemReader())
-				.processor(userItemProcessor())
+	@Scope(value = "prototype")
+	public Step migrateUsersStep(String projectNm) {
+		return stepBuilderFactory.get("user").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(userMongoItemReader(projectNm))
+				.processor(item -> item)
 				.writer(userWriter)
 				.listener(chunkCountListener)
 				.taskExecutor(threadPoolTaskExecutor)

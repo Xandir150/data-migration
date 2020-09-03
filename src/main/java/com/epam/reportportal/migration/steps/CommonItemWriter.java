@@ -4,14 +4,12 @@ import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.epam.reportportal.migration.steps.StatisticsFieldsService.*;
@@ -23,24 +21,21 @@ import static com.epam.reportportal.migration.steps.StatisticsFieldsService.*;
 public class CommonItemWriter {
 
 	@Autowired
-	private NamedParameterJdbcTemplate jdbcTemplate;
-
-	@Autowired
 	private StatisticsFieldsService fieldsService;
 
-	public void writeTags(BasicDBList tags, String query, Long id) {
+	public List<SqlParameterSource> getAttributes(BasicDBList tags, Long id) {
 		if (CollectionUtils.isEmpty(tags)) {
-			return;
+			return Collections.emptyList();
 		}
-		jdbcTemplate.batchUpdate(query, tags.stream().map(it -> {
+		return tags.stream().map(it -> {
 			MapSqlParameterSource params = new MapSqlParameterSource();
 			params.addValue("val", it);
 			params.addValue("id", id);
 			return params;
-		}).toArray(SqlParameterSource[]::new));
+		}).collect(Collectors.toList());
 	}
 
-	public void writeStatistics(DBObject statistics, String query, Long id) {
+	public List<SqlParameterSource> getStatisticsParams(DBObject statistics, Long id) {
 		DBObject executions = (DBObject) statistics.get("executionCounter");
 
 		SqlParameterSource[] executionParams = executions.keySet().stream().map(it -> {
@@ -50,16 +45,14 @@ public class CommonItemWriter {
 
 		DBObject defects = (DBObject) statistics.get("issueCounter");
 
-		SqlParameterSource[] params = Stream.of(
+		return Stream.of(
 				executionParams,
 				prepareParams("automationBug", AB_CUSTOM, id, defects),
 				prepareParams("productBug", PB_CUSTOM, id, defects),
 				prepareParams("systemIssue", SI_CUSTOM, id, defects),
 				prepareParams("toInvestigate", TI_CUSTOM, id, defects),
 				prepareParams("noDefect", ND_CUSTOM, id, defects)
-		).flatMap(Arrays::stream).toArray(SqlParameterSource[]::new);
-
-		jdbcTemplate.batchUpdate(query, params);
+		).flatMap(Arrays::stream).collect(Collectors.toList());
 	}
 
 	private SqlParameterSource[] prepareParams(String type, String fieldRegex, Long id, DBObject defects) {
@@ -82,16 +75,16 @@ public class CommonItemWriter {
 		return null;
 	}
 
-	public void writeParams(BasicDBList parameters, String insertItemParameters, Long itemId) {
+	public List<SqlParameterSource> getParams(BasicDBList parameters, Long itemId) {
 		if (CollectionUtils.isEmpty(parameters)) {
-			return;
+			return Collections.emptyList();
 		}
-		jdbcTemplate.batchUpdate(insertItemParameters, parameters.stream().map(it -> {
+		return parameters.stream().map(it -> {
 			MapSqlParameterSource params = new MapSqlParameterSource();
 			params.addValue("key", Optional.ofNullable(((DBObject) it).get("key")).orElse(""));
-			params.addValue("val", Optional.ofNullable(((DBObject) it).get("val")).orElse(""));
+			params.addValue("val", Optional.ofNullable(((DBObject) it).get("value")).orElse("NULL"));
 			params.addValue("id", itemId);
 			return params;
-		}).toArray(SqlParameterSource[]::new));
+		}).collect(Collectors.toList());
 	}
 }

@@ -33,13 +33,13 @@ import static com.epam.reportportal.migration.datastore.binary.impl.DataStoreUti
 public class UserWriter implements ItemWriter<DBObject> {
 
 	static final String INSERT_USER = "INSERT INTO users (login, password, email, role, type, expired, full_name, metadata) VALUES "
-			+ "(:lg, :pass, :em , :rl, :tp, :exp, :fn, :md::JSONB)";
+			+ "(:lg, :pass, :em , :rl, :tp, :exp, :fn, :md::JSONB) ON CONFLICT DO NOTHING ";
 
-	static final String INSERT_USER_SID = "INSERT INTO acl_sid (principal, sid) VALUES (TRUE, :sid)";
+	static final String INSERT_USER_SID = "INSERT INTO acl_sid (principal, sid) VALUES (TRUE, :sid) ON CONFLICT DO NOTHING";
 
 	static final String INSERT_USER_ATTACH =
 			"INSERT INTO users (login, attachment, attachment_thumbnail, password, email, role, type, expired, full_name, metadata) VALUES "
-					+ "(:lg, :attach, :attach_thumb, :pass, :em , :rl, :tp, :exp, :fn, :md::JSONB)";
+					+ "(:lg, :attach, :attach_thumb, :pass, :em , :rl, :tp, :exp, :fn, :md::JSONB) ON CONFLICT DO NOTHING";
 
 	@Autowired
 	@Qualifier("userDataStoreService")
@@ -54,6 +54,7 @@ public class UserWriter implements ItemWriter<DBObject> {
 	@Override
 	public void write(List<? extends DBObject> items) {
 
+		System.out.println(items);
 		Map<Boolean, ? extends List<? extends DBObject>> splitted = items.stream()
 				.collect(Collectors.partitioningBy(it -> it.get("photoId") != null));
 
@@ -81,7 +82,10 @@ public class UserWriter implements ItemWriter<DBObject> {
 			throw new RuntimeException(e);
 		}
 
-		String attach = dataStoreService.save(Paths.get(ROOT_USER_PHOTO_DIR, user.get("_id").toString()).toString(), new ByteArrayInputStream(bytes));
+		String attach = dataStoreService.save(
+				Paths.get(ROOT_USER_PHOTO_DIR, user.get("_id").toString()).toString(),
+				new ByteArrayInputStream(bytes)
+		);
 		String attachThumb = dataStoreService.saveThumbnail(DataStoreUtils.buildThumbnailFileName(ROOT_USER_PHOTO_DIR,
 				user.get("_id").toString()
 		), new ByteArrayInputStream(bytes));

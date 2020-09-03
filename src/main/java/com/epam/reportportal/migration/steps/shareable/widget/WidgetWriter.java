@@ -1,7 +1,7 @@
 package com.epam.reportportal.migration.steps.shareable.widget;
 
 import com.epam.reportportal.migration.steps.shareable.ShareableWriter;
-import com.epam.reportportal.migration.steps.utils.CacheableDataService;
+import com.epam.reportportal.migration.steps.CacheableDataService;
 import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import org.bson.types.ObjectId;

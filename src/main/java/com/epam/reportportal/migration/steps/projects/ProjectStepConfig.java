@@ -6,6 +6,7 @@ import com.mongodb.DBObject;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
@@ -14,11 +15,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,11 +52,7 @@ public class ProjectStepConfig {
 	@Autowired
 	private TaskExecutor threadPoolTaskExecutor;
 
-	@Value("${rp.project}")
-	private String projectName;
-
-	@Bean
-	public MongoItemReader<DBObject> projectMongoItemReader() {
+	public MongoItemReader<DBObject> projectMongoItemReader(String projectName) {
 		MongoItemReader<DBObject> project = MigrationUtils.getMongoItemReader(mongoTemplate, "project");
 		project.setQuery("{_id : ?0}");
 		project.setParameterValues(Lists.newArrayList(projectName));
@@ -65,13 +61,16 @@ public class ProjectStepConfig {
 	}
 
 	@Bean
-	public Step migrateProjectsStep() {
-		return stepBuilderFactory.get("project").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(projectMongoItemReader())
+	@Scope(value = "prototype")
+	public Step migrateProjectsStep(String projectName) {
+		final TaskletStep project = stepBuilderFactory.get("project").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(projectMongoItemReader(projectName))
 				.processor(projectItemProcessor)
 				.writer(projectItemWriter)
 				.listener(chunkCountListener)
 				.taskExecutor(threadPoolTaskExecutor)
 				.build();
+//		project.setAllowStartIfComplete(true);
+		return project;
 	}
 
 	@Bean

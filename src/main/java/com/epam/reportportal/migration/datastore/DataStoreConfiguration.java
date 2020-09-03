@@ -45,7 +45,6 @@ public class DataStoreConfiguration {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataStoreConfiguration.class);
 
-
 	@Bean
 	@ConditionalOnProperty(name = "datastore.type", havingValue = "filesystem")
 	public DataStore localDataStore(@Value("${datastore.default.path:/data/store}") String storagePath,

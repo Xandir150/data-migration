@@ -2,10 +2,17 @@ package com.epam.reportportal.migration;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.job.builder.SimpleJobBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -13,6 +20,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +47,7 @@ public class DataMigrationApplication {
 	@Bean
 	// mongo uuid -> postgres id
 	public Cache<String, Object> idsCache() {
-		return Caffeine.newBuilder().initialCapacity(5_000).maximumSize(1_000_000).expireAfterAccess(30, TimeUnit.HOURS).build();
+		return Caffeine.newBuilder().initialCapacity(1_000_000).maximumSize(1_000_000).expireAfterAccess(30, TimeUnit.HOURS).build();
 	}
 
 	@Bean
@@ -84,6 +92,25 @@ public class DataMigrationApplication {
 	}
 
 	public static void main(String[] args) {
-		SpringApplication.run(DataMigrationApplication.class, args);
+		SpringApplication app = new SpringApplication(DataMigrationApplication.class);
+		app.setWebEnvironment(false);
+		ConfigurableApplicationContext ctx = app.run(args);
+
+		JobLauncher jobLauncher = ctx.getBean(JobLauncher.class);
+		String projectName = ctx.getEnvironment().getProperty("rp.project");
+		JobParameters jobParameters = new JobParametersBuilder().toJobParameters();
+		Arrays.stream(projectName.split(",")).map(it -> it.trim().toLowerCase()).forEach(project -> {
+			SimpleJobBuilder builder = (SimpleJobBuilder) ctx.getBean("simpleJobBuilder", project);
+			Job job = builder.build();
+			try {
+				final JobExecution run = jobLauncher.run(job, jobParameters);
+				System.out.println(run.getExitStatus());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+
+		final ThreadPoolTaskExecutor taskExecutor = ctx.getBean("threadPoolTaskExecutor", ThreadPoolTaskExecutor.class);
+		taskExecutor.shutdown();
 	}
 }

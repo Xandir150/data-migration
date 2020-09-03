@@ -7,8 +7,15 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.job.builder.SimpleJobBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Pavel Bortnik
@@ -21,55 +28,32 @@ public class JobsConfiguration {
 	private JobBuilderFactory jobBuilderFactory;
 
 	@Autowired
-	@Qualifier("migrateBtsStep")
-	private Step migrateBtsStep;
-
-	@Autowired
-	@Qualifier("migrateUsersStep")
-	private Step migrateUserStep;
-
-	@Autowired
-	@Qualifier("migrateProjectsStep")
-	private Step migrateProjectsStep;
-
-	@Autowired
-	private Step migrateSettingsStep;
-
-	@Autowired
-	private Step migrateAuthStep;
-
-	@Autowired
-	@Qualifier("migrateFilterStep")
-	private Step migrateFilterStep;
-
-	@Autowired
-	@Qualifier("migrateWidgetStep")
-	private Step migrateWidgetStep;
-
-	@Autowired
-	@Qualifier("migrateDashboardStep")
-	private Step migrateDashboardStep;
-
-	@Autowired
-	private Step migratePreferencesStep;
+	private ApplicationContext ctx;
 
 	@Autowired
 	private MigrationJobExecutionListener migrationJobExecutionListener;
 
 	@Bean
-	public Job job() {
-		SimpleJobBuilder job = jobBuilderFactory.get("settingsMigrationJob")
+	@Scope(value = "prototype")
+	public SimpleJobBuilder simpleJobBuilder(String projectNm) {
+		SimpleJobBuilder job = jobBuilderFactory.get(projectNm)
 				.listener(migrationJobExecutionListener)
-				.start(migrateUserStep)
-				.next(migrateProjectsStep)
-				.next(migrateSettingsStep)
-				.next(migrateAuthStep)
-				.next(migrateFilterStep)
-				.next(migrateWidgetStep)
-				.next(migrateDashboardStep)
-				.next(migratePreferencesStep)
-				.next(migrateBtsStep);
-		return job.build();
+				.start((Step) ctx.getBean("migrateUsersStep", projectNm))
+				.next((Step) ctx.getBean("migrateProjectsStep", projectNm))
+				.next((Step) ctx.getBean("migrateSettingsStep", projectNm))
+//				.next(migrateAuthStep)
+				.next((Step) ctx.getBean("migrateFilterStep", projectNm))
+				.next((Step) ctx.getBean("migrateWidgetStep", projectNm))
+				.next((Step) ctx.getBean("migrateDashboardStep", projectNm))
+				.next((Step) ctx.getBean("migratePreferencesStep", projectNm))
+				.next((Step) ctx.getBean("migrateBtsStep", projectNm))
+				.next((Step) ctx.getBean("migrateLaunchStep", projectNm))
+				.next((Step) ctx.getBean("migrateLaunchNumberStep", projectNm));
+//		for (Step s : levelItemsFlow) {
+//			job = job.next(s);
+//		}
+//		job.next(migrateLogStep);
+		return job;
 	}
 
 }

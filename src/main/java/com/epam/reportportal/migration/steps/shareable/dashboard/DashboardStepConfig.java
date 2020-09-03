@@ -6,12 +6,14 @@ import com.mongodb.DBObject;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -50,9 +52,6 @@ public class DashboardStepConfig {
 	@Autowired
 	private ItemWriter<DBObject> dashboardWriter;
 
-	@Value("${rp.project}")
-	private String projectName;
-
 	@PostConstruct
 	public void initialQueries() {
 		try {
@@ -67,8 +66,7 @@ public class DashboardStepConfig {
 		}
 	}
 
-	@Bean
-	public MongoItemReader<DBObject> dashboardItemReader() {
+	public MongoItemReader<DBObject> dashboardItemReader(String projectName) {
 		MongoItemReader<DBObject> reader = MigrationUtils.getMongoItemReader(mongoTemplate, "dashboard");
 		reader.setQuery("{projectName : ?0}");
 		reader.setParameterValues(Lists.newArrayList(projectName));
@@ -77,8 +75,9 @@ public class DashboardStepConfig {
 	}
 
 	@Bean("migrateDashboardStep")
-	public Step migrateDashboardStep() {
-		return stepBuilderFactory.get("dashboard").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(dashboardItemReader())
+	@Scope(value = "prototype")
+	public Step migrateDashboardStep(String projectName) {
+		return stepBuilderFactory.get("dashboard").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(dashboardItemReader(projectName))
 				.processor(dashboardProcessor)
 				.writer(dashboardWriter)
 				.listener(chunkCountListener)

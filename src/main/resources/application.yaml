@@ -3,8 +3,14 @@ spring:
     mongodb:
       database: ${rp.mongodb.database}
       uri: ${rp.mongodb.uri}
-
+  batch:
+    job:
+      enabled: false
 rp:
+  items:
+    batch: 1000
+  grid:
+    size: 16
   pool:
     corePoolSize: 6
     maxPoolSize: 8
@@ -40,18 +46,18 @@ rp:
     type: minio
 
   ##keep launches from date in ISO_LOCAL_DATE (yyyy-MM-dd)
-  project: superadmin_personal
+  project: superadmin_personal, default_personal
   launch:
-    keepFrom: 2000-01-01
-    keepAttr: forever
+    keepFrom: 2019-03-30
+    keepAttr: 0
   test:
-    keepFrom: 2000-01-01
+    keepFrom: 2019-03-30
   log:
-    keepFrom: 2000-01-01
+    keepFrom: 2019-03-30
   attach:
-    keepFrom: 2000-01-01
+    keepFrom: 2019-03-30
   user:
-    keepFrom: 2000-01-01
+    keepFrom: 2019-03-30
 
 
 logging:

@@ -12,6 +12,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 /**
  * @author <a href="mailto:pavel_bortnik@epam.com">Pavel Bortnik</a>
@@ -20,25 +22,25 @@ import javax.sql.DataSource;
 public class MigrationJobExecutionListener implements JobExecutionListener {
 
 	@Autowired
-	@Qualifier("threadPoolTaskExecutor")
-	private ThreadPoolTaskExecutor taskExecutor;
-
-	@Autowired
-	private JdbcTemplate jdbcTemplate;
-
-	@Autowired
 	private DataSource dataSource;
 
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
-		ClassPathResource resource = new ClassPathResource("clean_up_data.sql");
-		ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
-		databasePopulator.execute(dataSource);
+		try (Connection connection = dataSource.getConnection();
+				PreparedStatement preparedStatement = connection.prepareStatement(
+						"CREATE OR REPLACE FUNCTION multi_nextval(use_seqname REGCLASS, use_increment INTEGER) RETURNS BIGINT AS\n" + "$$\n"
+								+ "DECLARE\n" + "    reply   BIGINT;\n"
+								+ "    lock_id BIGINT := (use_seqname::BIGINT - 2147483648)::INTEGER;\n" + "BEGIN\n"
+								+ "    PERFORM pg_advisory_lock(lock_id); reply := nextval(use_seqname); PERFORM setval(use_seqname, reply + use_increment - 1, TRUE);\n"
+								+ "    PERFORM pg_advisory_unlock(lock_id); RETURN reply;\n" + "END;\n" + "$$ LANGUAGE plpgsql;")) {
+			preparedStatement.execute();
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	@Override
 	public void afterJob(JobExecution jobExecution) {
-		taskExecutor.shutdown();
 		if (jobExecution.getStatus().equals(BatchStatus.COMPLETED)) {
 			ClassPathResource resource = new ClassPathResource("table_analyze.sql");
 			ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);

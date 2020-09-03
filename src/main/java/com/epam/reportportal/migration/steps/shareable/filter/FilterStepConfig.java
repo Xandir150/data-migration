@@ -6,12 +6,14 @@ import com.mongodb.DBObject;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -48,11 +50,7 @@ public class FilterStepConfig {
 	@Autowired
 	private ItemWriter<DBObject> filterWriter;
 
-	@Value("${rp.project}")
-	private String projectName;
-
-	@Bean
-	public MongoItemReader<DBObject> filterItemReader() {
+	public MongoItemReader<DBObject> filterItemReader(String projectName) {
 		executeInitialQueries();
 		MongoItemReader<DBObject> reader = MigrationUtils.getMongoItemReader(mongoTemplate, "userFilter");
 		reader.setQuery("{projectName : ?0}");
@@ -78,8 +76,9 @@ public class FilterStepConfig {
 	}
 
 	@Bean("migrateFilterStep")
-	public Step migrateFilterStep() {
-		return stepBuilderFactory.get("filter").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(filterItemReader())
+	@Scope(value = "prototype")
+	public Step migrateFilterStep(String projectName) {
+		return stepBuilderFactory.get("filter").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(filterItemReader(projectName))
 				.processor(filterProcessor)
 				.writer(filterWriter)
 				.listener(chunkCountListener)

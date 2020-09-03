@@ -16,15 +16,24 @@
 
 package com.epam.reportportal.migration.datastore.filesystem;
 
-import java.io.InputStream;
+import org.springframework.stereotype.Component;
+
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 
 /**
  * @author Dzianis_Shybeka
  */
-public interface DataStore {
+@Component
+public class FilePathGenerator {
 
-	String save(String fileName, InputStream inputStream);
-
-	void delete(String filePath);
-
+	/**
+	 * Generate relative file path for new local file. ${Day of the year}/${split UUID part}
+	 *
+	 * @return
+	 */
+	public String generate(LocalDateTime localDateTime, String projectId, String launchUuid) {
+		String date = localDateTime.getYear() + "-" + localDateTime.getMonthValue();
+		return Paths.get(String.valueOf(projectId), date, launchUuid).toString();
+	}
 }

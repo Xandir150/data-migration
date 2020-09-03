@@ -33,7 +33,7 @@ public class ProjectItemWriter implements ItemWriter<DBObject> {
 
 	private static final String INSERT_PROJECT_ISSUE_TYPES = "INSERT INTO issue_type_project (project_id, issue_type_id) VALUES (:pr, :it)";
 
-	private static final String INSERT_DEFAULT_ANALYZER_CONFIG = "INSERT INTO project_attribute(attribute_id, value, project_id) VALUES (5, 1, :pr), (6, 1, :pr), (7, 95, :pr), (8, 4, :pr), (9, FALSE, :pr), (10, FALSE, :pr)";
+	private static final String INSERT_DEFAULT_ANALYZER_CONFIG = "INSERT INTO project_attribute(attribute_id, value, project_id) VALUES (7, 95, :pr), (8, 4, :pr), (9, FALSE, :pr), (10, FALSE, :pr)";
 
 	private static final String INSERT_PROJECT_ATTRIBUTES = "INSERT INTO project_attribute(attribute_id, value, project_id) VALUES (:attr, :val, :pr)";
 
@@ -154,6 +154,10 @@ public class ProjectItemWriter implements ItemWriter<DBObject> {
 		}).toArray(Map[]::new);
 
 		jdbcTemplate.batchUpdate(INSERT_PROJECT_ATTRIBUTES, params);
+		jdbcTemplate.update(
+				"UPDATE project_attribute SET value = extract(EPOCH FROM value::INTERVAL) WHERE attribute_id IN (SELECT id  FROM attribute  WHERE attribute.name IN ('job.interruptJobTime',  'job.keepLaunches',  'job.keepLogs',  'job.keepScreenshots'))",
+				Collections.emptyMap()
+		);
 	}
 
 	private void writeEmailRules(DBObject project, Long projectId) {
