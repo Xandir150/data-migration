@@ -1,21 +1,16 @@
 package com.epam.reportportal.migration;
 
-import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.job.builder.SimpleJobBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author Pavel Bortnik
@@ -41,7 +36,7 @@ public class JobsConfiguration {
 				.start((Step) ctx.getBean("migrateUsersStep", projectNm))
 				.next((Step) ctx.getBean("migrateProjectsStep", projectNm))
 				.next((Step) ctx.getBean("migrateSettingsStep", projectNm))
-//				.next(migrateAuthStep)
+				//				.next(migrateAuthStep)
 				.next((Step) ctx.getBean("migrateFilterStep", projectNm))
 				.next((Step) ctx.getBean("migrateWidgetStep", projectNm))
 				.next((Step) ctx.getBean("migrateDashboardStep", projectNm))
@@ -49,10 +44,11 @@ public class JobsConfiguration {
 				.next((Step) ctx.getBean("migrateBtsStep", projectNm))
 				.next((Step) ctx.getBean("migrateLaunchStep", projectNm))
 				.next((Step) ctx.getBean("migrateLaunchNumberStep", projectNm));
-//		for (Step s : levelItemsFlow) {
-//			job = job.next(s);
-//		}
-//		job.next(migrateLogStep);
+		List<Step> levelItemsFlow = (List<Step>) ctx.getBean("levelItemsFlow", projectNm);
+		for (Step s : levelItemsFlow) {
+			job = job.next(s);
+		}
+		job.next(ctx.getBean("migrateLogStep", Step.class));
 		return job;
 	}
 

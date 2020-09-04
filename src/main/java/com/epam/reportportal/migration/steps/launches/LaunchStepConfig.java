@@ -13,6 +13,7 @@ import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -30,6 +31,9 @@ import java.util.List;
 public class LaunchStepConfig {
 
 	private static final int CHUNK_SIZE = 1_000;
+
+	@Autowired
+	private ApplicationContext ctx;
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
@@ -50,20 +54,18 @@ public class LaunchStepConfig {
 	private ChunkListener chunkCountListener;
 
 	@Autowired
-	@Qualifier("launchPartitioner")
-	private Partitioner datePartitioning;
-
-	@Autowired
 	private TaskExecutor threadPoolTaskExecutor;
 
+	private String projectName;
+
 	@Bean
-//	@StepScope
+	@StepScope
 	public MongoItemReader<DBObject> launchItemReader(@Value("#{stepExecutionContext[minValue]}") Long minTime,
-			@Value("#{stepExecutionContext[maxValue]}") Long maxTime, String projectName) {
+			@Value("#{stepExecutionContext[maxValue]}") Long maxTime) {
 		MongoItemReader<DBObject> itemReader = MigrationUtils.getMongoItemReader(mongoTemplate, "launch");
 		itemReader.setQuery("{ $and : [ { 'projectRef' : ?0 }, { 'start_time': { $gte : ?1 }}, { 'start_time': { $lte :  ?2 }} ]}");
 		List<Object> list = new LinkedList<>();
-		list.add(projectName);
+		list.add(getProjectName());
 		list.add(new Date(minTime));
 		list.add(new Date(maxTime));
 		itemReader.setParameterValues(list);
@@ -74,22 +76,26 @@ public class LaunchStepConfig {
 	@Bean(name = "migrateLaunchStep")
 	@Scope(value = "prototype")
 	public Step migrateLaunchStep(String projectName) {
+		LaunchPartitioner launchPartitioner = ctx.getBean("launchPartitioner", LaunchPartitioner.class);
+		this.projectName = projectName;
 		return stepBuilderFactory.get("launch")
-				.partitioner("slaveLaunchStep", datePartitioning)
+				.partitioner("slaveLaunchStep", launchPartitioner)
 				.gridSize(6)
-				.step(slaveLaunchStep(projectName))
+				.step(slaveLaunchStep())
 				.taskExecutor(threadPoolTaskExecutor)
 				.listener(chunkCountListener)
 				.build();
 	}
 
 	@Bean
-	@Scope(value = "prototype")
-	public Step slaveLaunchStep(String projectName) {
+	public Step slaveLaunchStep() {
 		return stepBuilderFactory.get("slaveLaunchStep").<DBObject, DBObject>chunk(CHUNK_SIZE).reader(launchItemReader(
 				null,
-				null,
-				projectName
+				null
 		)).processor(launchItemProcessor).writer(launchItemWriter).build();
+	}
+
+	public String getProjectName() {
+		return projectName;
 	}
 }

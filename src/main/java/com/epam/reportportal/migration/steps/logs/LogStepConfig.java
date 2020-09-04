@@ -78,6 +78,7 @@ public class LogStepConfig {
 	private List<String> testItemRefs;
 
 	@Bean(name = "migrateLogStep")
+	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 	public Step migrateLogStep() {
 		Date fromDate = Date.from(LocalDate.parse(keepFrom).atStartOfDay(ZoneOffset.UTC).toInstant());
 		prepareCollectionForReading();
@@ -87,7 +88,6 @@ public class LogStepConfig {
 				.step(slaveLogStep())
 				.taskExecutor(threadPoolTaskExecutor)
 				.listener(chunkCountListener)
-//				.allowStartIfComplete(true)
 				.build();
 	}
 

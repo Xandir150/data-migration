@@ -43,9 +43,6 @@ public class ItemsStepConfig {
 
 	public static String OPTIMIZED_TEST_COLLECTION = "optimizeTest";
 
-	@Value("${rp.pool.corePoolSize}")
-	private int corePoolSize;
-
 	@Value("${rp.items.batch}")
 	private int batchSize;
 
@@ -77,18 +74,16 @@ public class ItemsStepConfig {
 	@Value("${rp.test.keepFrom}")
 	private String keepFrom;
 
-	@Value("${rp.project}")
-	private String projectName;
-
 	@Bean
 	public TriFunction<Integer, DBObject, DBObject, Step> itemStepFactory() {
 		return this::migrateItemStep;
 	}
 
 	@Bean
-	public List<Step> levelItemsFlow() {
+	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+	public List<Step> levelItemsFlow(String projectName) {
 
-		prepareCollectionForMigration();
+		prepareCollectionForMigration(projectName);
 
 		DBObject testItem = mongoTemplate.findOne(new Query().with(new Sort(Sort.Direction.DESC, "pathLevel")).limit(1),
 				DBObject.class,
@@ -114,12 +109,9 @@ public class ItemsStepConfig {
 				.gridSize(gridSize)
 				.step(slaveItemStep(i))
 				.taskExecutor(threadPoolTaskExecutor)
-//				.allowStartIfComplete(true)
 				.build();
 	}
 
-	@Bean
-	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 	public DatePartitioner partitioner(Integer i, DBObject minObject, DBObject maxObject) {
 		DatePartitioner partitioner = new DatePartitioner();
 		partitioner.setPathLevel(i);
@@ -173,9 +165,9 @@ public class ItemsStepConfig {
 		return mongoTemplate.findOne(query, DBObject.class, OPTIMIZED_TEST_COLLECTION);
 	}
 
-	private void prepareCollectionForMigration() {
+	private void prepareCollectionForMigration(String projectName) {
 		prepareIndexTestItemStartTime();
-		prepareOptimizedTestItemCollection();
+		prepareOptimizedTestItemCollection(projectName);
 		prepareIndexOptimizedPath();
 	}
 
@@ -195,7 +187,7 @@ public class ItemsStepConfig {
 		}
 	}
 
-	private void prepareOptimizedTestItemCollection() {
+	private void prepareOptimizedTestItemCollection(String projectName) {
 		mongoTemplate.dropCollection(OPTIMIZED_TEST_COLLECTION);
 		mongoTemplate.createCollection(OPTIMIZED_TEST_COLLECTION);
 
