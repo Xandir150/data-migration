@@ -1,7 +1,6 @@
 package com.epam.reportportal.migration.steps.items;
 
 import com.epam.reportportal.migration.seek.MongoSeekItemReader;
-import com.google.common.collect.Lists;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.slf4j.Logger;
@@ -145,12 +144,16 @@ public class ItemsStepConfig {
 		itemReader.setDateField("start_time");
 		itemReader.setCurrentDate(new Date(minTime));
 		itemReader.setLatestDate(new Date(maxTime));
-		itemReader.setQuery("{$and : [ {start_time : {$gte : ?1}}, {'pathLevel' : ?0}]}");
+		if (itemReader.getCurrentDate().equals(itemReader.getLatestDate())) {
+			itemReader.setCurrentDate(new Date(itemReader.getCurrentDate().getTime() - 1));
+		}
+		itemReader.setQuery("{$and : [ {start_time : {$gte : ?1}}, {start_time : {$lte : ?2}}, {'pathLevel' : ?0}]}");
 		List<Object> list = new LinkedList<>();
 		list.add(new Object());
 		list.add(new Object());
 		list.add(new Object());
 		list.set(0, pathLevel);
+		list.set(2, itemReader.getLatestDate());
 		itemReader.setParameterValues(list);
 		return itemReader;
 	}

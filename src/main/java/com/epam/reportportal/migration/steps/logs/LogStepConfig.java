@@ -126,14 +126,19 @@ public class LogStepConfig {
 		itemReader.setDateField("logTime");
 		itemReader.setCurrentDate(new Date(minTime));
 		itemReader.setLatestDate(new Date(maxTime));
+		if (itemReader.getCurrentDate().equals(itemReader.getLatestDate())) {
+			itemReader.setCurrentDate(new Date(itemReader.getCurrentDate().getTime() - 1));
+		}
 		final LinkedList<Object> objects = new LinkedList<>();
 		objects.add(new Object());
 		objects.add(new Object());
 		objects.add(new Object());
-		objects.set(0, itemReader.getCurrentDate());
-		objects.set(2, testItemRefs.toArray());
+		objects.add(new Object());
+		objects.set(1, itemReader.getCurrentDate());
+		objects.set(2, itemReader.getLatestDate());
+		objects.set(3, testItemRefs.toArray());
 		itemReader.setParameterValues(objects);
-		itemReader.setQuery("{$and : [ {logTime : {$gte : ?1}}, {testItemRef : {$in : ?2}}] }");
+		itemReader.setQuery("{$and : [ {logTime : {$gte : ?1}}, {logTime : {$lte : ?2}}, {testItemRef : {$in : ?3}}] }");
 		return itemReader;
 	}
 

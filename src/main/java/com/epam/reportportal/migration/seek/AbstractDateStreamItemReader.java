@@ -85,6 +85,10 @@ public abstract class AbstractDateStreamItemReader<T> extends AbstractItemStream
 		return currentId;
 	}
 
+	public Date getLatestDate() {
+		return latestDate;
+	}
+
 	@Override
 	public T read() throws Exception, UnexpectedInputException, ParseException {
 		if (latestDate.getTime() <= currentDate.getTime()) {
