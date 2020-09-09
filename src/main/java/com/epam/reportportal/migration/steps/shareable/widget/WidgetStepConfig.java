@@ -272,6 +272,7 @@ public class WidgetStepConfig {
 		if (widgetOptions != null) {
 			Object latest = widgetOptions.get("latest");
 			widgetOptions.put("latest", latest != null);
+			return widgetOptions;
 		}
 		return new BasicDBObject("latest", false);
 	}
