@@ -54,7 +54,6 @@ public class UserWriter implements ItemWriter<DBObject> {
 	@Override
 	public void write(List<? extends DBObject> items) {
 
-		System.out.println(items);
 		Map<Boolean, ? extends List<? extends DBObject>> splitted = items.stream()
 				.collect(Collectors.partitioningBy(it -> it.get("photoId") != null));
 

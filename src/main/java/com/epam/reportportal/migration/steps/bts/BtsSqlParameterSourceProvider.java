@@ -20,10 +20,11 @@ public class BtsSqlParameterSourceProvider implements ItemSqlParameterSourceProv
 		BasicDBObject paramsObject = (BasicDBObject) item.get("params");
 		String params = paramsObject.toJson();
 		params = params.replaceAll("isRequired", "required");
+		params = params.replaceAll("_id", "id");
 		MapSqlParameterSource res = new MapSqlParameterSource();
 		res.addValue("pr", item.get("projectId"));
 		res.addValue("tp", item.get("integrationId"));
-		res.addValue("en", false);
+		res.addValue("en", true);
 		res.addValue("params", params);
 		res.addValue("cr", Optional.ofNullable(item.get("username")).orElse("mongodb"));
 		res.addValue("nm", item.get("project") + "_" + ((DBObject) paramsObject.get("params")).get("id").toString());
