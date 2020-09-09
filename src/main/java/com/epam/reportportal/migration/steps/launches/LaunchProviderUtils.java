@@ -27,7 +27,11 @@ class LaunchProviderUtils {
 		parameterSource.addValue("num", item.get("number"));
 		parameterSource.addValue("last", toUtc((Date) item.get("last_modified")));
 		parameterSource.addValue("md", item.get("mode"));
-		parameterSource.addValue("st", item.get("status"));
+		if ("RESETED".equalsIgnoreCase((String)item.get("status"))) {
+			parameterSource.addValue("st", "PASSED");
+		} else {
+			parameterSource.addValue("st", item.get("status"));
+		}
 		parameterSource.addValue("approx", item.get("approximateDuration"));
 		parameterSource.addValue("hrtr", Optional.ofNullable(item.get("hasRetries")).orElse(false));
 		return parameterSource;
