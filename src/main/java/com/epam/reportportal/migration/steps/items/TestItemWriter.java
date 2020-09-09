@@ -192,7 +192,11 @@ public class TestItemWriter implements ItemWriter<DBObject> {
 	private SqlParameterSource getItemResults(DBObject item, Long itemId) {
 		MapSqlParameterSource parameterSource = new MapSqlParameterSource();
 		parameterSource.addValue("id", itemId);
-		parameterSource.addValue("st", item.get("status"));
+		if ("RESETED".equalsIgnoreCase((String)item.get("status"))) {
+			parameterSource.addValue("st", "PASSED");
+		} else {
+			parameterSource.addValue("st", item.get("status"));
+		}
 		parameterSource.addValue("stime", toUtc((Date) item.get("start_time")));
 		parameterSource.addValue("ed", toUtc((Date) item.get("end_time")));
 		return parameterSource;
