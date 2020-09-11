@@ -24,6 +24,9 @@ public abstract class AbstractSeekItemReader<T> extends AbstractDateStreamItemRe
 	@Override
 	protected T doRead() throws Exception {
 		if (results == null || !results.hasNext()) {
+			if (getLatestDate().getTime() <= getCurrentDate().getTime()) {
+				return null;
+			}
 			results = doPageRead();
 			if (results == null || !results.hasNext()) {
 				return null;

@@ -91,9 +91,6 @@ public abstract class AbstractDateStreamItemReader<T> extends AbstractItemStream
 
 	@Override
 	public T read() throws Exception, UnexpectedInputException, ParseException {
-		if (latestDate.getTime() <= currentDate.getTime()) {
-			return null;
-		}
 		T t = doRead();
 		if (t instanceof DBObject) {
 			currentDate = (Date) ((DBObject) t).get(dateField);
