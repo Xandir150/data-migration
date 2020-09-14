@@ -1,6 +1,5 @@
 package com.epam.reportportal.migration.steps.logs;
 
-import com.epam.reportportal.migration.seek.MongoSeekItemReader;
 import com.mongodb.DBObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +9,7 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +21,6 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.time.LocalDate;
@@ -80,11 +79,10 @@ public class LogStepConfig {
 	@Bean(name = "migrateLogStep")
 	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 	public Step migrateLogStep() {
-		Date fromDate = Date.from(LocalDate.parse(keepFrom).atStartOfDay(ZoneOffset.UTC).toInstant());
 		prepareCollectionForReading();
 		return stepBuilderFactory.get("log")
-				.partitioner("slaveLogStep", logPartitioner(findStartObject(fromDate), findLastObject(fromDate)))
-				.gridSize(gridSize)
+				.partitioner("slaveLogStep", logPartitioner())
+				.gridSize((testItemRefs.size() / 1_00) == 0 ? 1 : testItemRefs.size() / 1_00)
 				.step(slaveLogStep())
 				.taskExecutor(threadPoolTaskExecutor)
 				.listener(chunkCountListener)
@@ -101,44 +99,32 @@ public class LogStepConfig {
 
 	@Bean
 	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
-	public com.epam.reportportal.migration.steps.items.DatePartitioner logPartitioner(DBObject minObject, DBObject maxObject) {
-		final com.epam.reportportal.migration.steps.items.DatePartitioner partitioner = new com.epam.reportportal.migration.steps.items.DatePartitioner();
-		if (minObject == null || maxObject == null) {
-			return partitioner;
-		}
-		partitioner.setMinDate((Date) minObject.get("logTime"));
-		partitioner.setMaxDate((Date) maxObject.get("logTime"));
-		return partitioner;
+	public LogPartitioner logPartitioner() {
+		LogPartitioner logPartitioner = new LogPartitioner();
+		logPartitioner.setItemIds(testItemRefs);
+		return logPartitioner;
 	}
 
 	@Bean
 	@StepScope
-	public MongoSeekItemReader<DBObject> logItemReader(@Value("#{stepExecutionContext[minValue]}") Long minTime,
-			@Value("#{stepExecutionContext[maxValue]}") Long maxTime) {
-		MongoSeekItemReader<DBObject> itemReader = new MongoSeekItemReader<>();
+	public MongoItemReader<DBObject> logItemReader(@Value("#{stepExecutionContext[minValue]}") Integer minIndex,
+			@Value("#{stepExecutionContext[maxValue]}") Integer maxIndex) {
+		MongoItemReader<DBObject> itemReader = new MongoItemReader<>();
 		itemReader.setTemplate(mongoTemplate);
 		itemReader.setTargetType(DBObject.class);
+		itemReader.setPageSize(batchSize);
 		itemReader.setCollection("log");
 		itemReader.setSort(new HashMap<>() {{
 			put("logTime", Sort.Direction.ASC);
 		}});
-		itemReader.setLimit(batchSize);
-		itemReader.setDateField("logTime");
-		itemReader.setCurrentDate(new Date(minTime));
-		itemReader.setLatestDate(new Date(maxTime));
-		if (itemReader.getCurrentDate().equals(itemReader.getLatestDate())) {
-			itemReader.setCurrentDate(new Date(itemReader.getCurrentDate().getTime() - 1));
-		}
 		final LinkedList<Object> objects = new LinkedList<>();
 		objects.add(new Object());
 		objects.add(new Object());
 		objects.add(new Object());
-		objects.add(new Object());
-		objects.set(1, itemReader.getCurrentDate());
-		objects.set(2, itemReader.getLatestDate());
-		objects.set(3, testItemRefs.toArray());
+		objects.set(1, testItemRefs.subList(minIndex, maxIndex));
+		objects.set(2, Date.from(LocalDate.parse(keepFrom).atStartOfDay(ZoneOffset.UTC).toInstant()));
 		itemReader.setParameterValues(objects);
-		itemReader.setQuery("{$and : [ {logTime : {$gte : ?1}}, {logTime : {$lte : ?2}}, {testItemRef : {$in : ?3}}] }");
+		itemReader.setQuery("{$and : [ {testItemRef : {$in : ?1}}, {logTime : {$gte : ?2}} ] }");
 		return itemReader;
 	}
 
@@ -152,25 +138,12 @@ public class LogStepConfig {
 			LOGGER.info("Adding 'log_time' index to log collection successfully finished");
 		}
 		Query query = new Query();
+		query.with(new Sort(Sort.Direction.ASC, "_id"));
 		query.fields().include("_id");
 		testItemRefs = mongoTemplate.find(query, DBObject.class, OPTIMIZED_TEST_COLLECTION)
 				.stream()
 				.map(it -> it.get("_id"))
 				.map(Object::toString)
 				.collect(Collectors.toList());
-	}
-
-	private DBObject findStartObject(Date fromDate) {
-		Query query = Query.query(Criteria.where("logTime").gte(fromDate).and("testItemRef").in(testItemRefs))
-				.with(new Sort(Sort.Direction.ASC, "logTime"))
-				.limit(1);
-		return mongoTemplate.findOne(query, DBObject.class, "log");
-	}
-
-	private DBObject findLastObject(Date fromDate) {
-		Query query = Query.query(Criteria.where("logTime").gte(fromDate).and("testItemRef").in(testItemRefs))
-				.with(new Sort(Sort.Direction.DESC, "logTime"))
-				.limit(1);
-		return mongoTemplate.findOne(query, DBObject.class, "log");
 	}
 }
