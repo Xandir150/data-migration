@@ -44,8 +44,8 @@ public class LogStepConfig {
 	@Value("${rp.items.batch}")
 	private int batchSize;
 
-	@Value("${rp.grid.size}")
-	private int gridSize;
+	@Value("${rp.grid.logs}")
+	private int devide;
 
 	@Value("${rp.log.keepFrom}")
 	private String keepFrom;
@@ -76,13 +76,19 @@ public class LogStepConfig {
 
 	private List<String> testItemRefs;
 
+	private int refsSize;
+
 	@Bean(name = "migrateLogStep")
 	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 	public Step migrateLogStep() {
 		prepareCollectionForReading();
+		int grid = refsSize / devide;
+		if (grid == 0) {
+			grid = 1;
+		}
 		return stepBuilderFactory.get("log")
 				.partitioner("slaveLogStep", logPartitioner())
-				.gridSize((testItemRefs.size() / 1_00) == 0 ? 1 : testItemRefs.size() / 1_00)
+				.gridSize(grid)
 				.step(slaveLogStep())
 				.taskExecutor(threadPoolTaskExecutor)
 				.listener(chunkCountListener)
@@ -145,5 +151,6 @@ public class LogStepConfig {
 				.map(it -> it.get("_id"))
 				.map(Object::toString)
 				.collect(Collectors.toList());
+		refsSize = testItemRefs.size();
 	}
 }

@@ -11,6 +11,7 @@ rp:
     batch: 1000
   grid:
     size: 16
+    logs: 300
   pool:
     corePoolSize: 6
     maxPoolSize: 8

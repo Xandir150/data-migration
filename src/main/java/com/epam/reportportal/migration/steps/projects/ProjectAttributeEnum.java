@@ -11,7 +11,7 @@ public enum ProjectAttributeEnum {
 
 	NOTIFICATIONS_ENABLED("emailEnabled", String.valueOf(false)),
 	INTERRUPT_JOB_TIME("interruptJobTime", String.valueOf(Duration.ofDays(1).toSeconds())),
-	KEEP_LAUNCHES("keepLaunches", String.valueOf(Duration.ofDays(90).toSeconds())),
+	KEEP_LAUNCHES("keepLaunches", String.valueOf(Duration.ofDays(180).toSeconds())),
 	KEEP_LOGS("keepLogs", String.valueOf(Duration.ofDays(90).toSeconds())),
 	KEEP_SCREENSHOTS("keepScreenshots", String.valueOf(Duration.ofDays(14).toSeconds())),
 	INDEXING_RUNNING("indexingRunning", String.valueOf(false)),

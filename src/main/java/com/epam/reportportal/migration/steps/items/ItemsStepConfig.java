@@ -73,6 +73,9 @@ public class ItemsStepConfig {
 	@Value("${rp.test.keepFrom}")
 	private String keepFrom;
 
+	@Value("${rp.test.prepared}")
+	private boolean isPrepared;
+
 	@Bean
 	public TriFunction<Integer, DBObject, DBObject, Step> itemStepFactory() {
 		return this::migrateItemStep;
@@ -82,7 +85,9 @@ public class ItemsStepConfig {
 	@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 	public List<Step> levelItemsFlow(String projectName) {
 
-		prepareCollectionForMigration(projectName);
+		if (!isPrepared) {
+			prepareCollectionForMigration(projectName);
+		}
 
 		DBObject testItem = mongoTemplate.findOne(new Query().with(new Sort(Sort.Direction.DESC, "pathLevel")).limit(1),
 				DBObject.class,

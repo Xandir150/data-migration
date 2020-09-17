@@ -27,9 +27,19 @@ public class CommonItemWriter {
 		if (CollectionUtils.isEmpty(tags)) {
 			return Collections.emptyList();
 		}
-		return tags.stream().map(it -> {
+		return tags.stream().map(it -> (String) it).map(it -> {
+			String key = null;
+			String value;
+			if (it.contains(":")) {
+				final int endIndex = it.indexOf(':');
+				key = it.substring(0, endIndex);
+				value = it.substring(endIndex + 1);
+			} else {
+				value = it;
+			}
 			MapSqlParameterSource params = new MapSqlParameterSource();
-			params.addValue("val", it);
+			params.addValue("key", key);
+			params.addValue("val", value);
 			params.addValue("id", id);
 			return params;
 		}).collect(Collectors.toList());

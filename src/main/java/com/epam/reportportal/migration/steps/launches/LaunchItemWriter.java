@@ -32,7 +32,7 @@ public class LaunchItemWriter implements ItemWriter<DBObject> {
 					+ "mode, status, approximate_duration, has_retries) VALUES (:uuid, :pr, :usr, :nm, :desc, :start, :end, :num, :last, "
 					+ ":md::LAUNCH_MODE_ENUM, :st::STATUS_ENUM, :approx, :hrtr) ON CONFLICT DO NOTHING RETURNING id;";
 
-	private static final String INSERT_LAUNCH_ATTRIBUTES = "INSERT INTO item_attribute (value, launch_id) VALUES (:val, :id)";
+	private static final String INSERT_LAUNCH_ATTRIBUTES = "INSERT INTO item_attribute (key, value, launch_id) VALUES (:key, :val, :id)";
 
 	private static final String INSERT_LAUNCH_STATISTICS = "INSERT INTO statistics (s_counter, launch_id, statistics_field_id) VALUES (:ct, :id, :sfi)";
 
