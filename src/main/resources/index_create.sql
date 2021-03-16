@@ -42,7 +42,7 @@ ALTER TABLE issue
         FOREIGN KEY (issue_id) REFERENCES test_item_results (result_id) ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS issue_it_idx ON issue (issue_type);
 CREATE INDEX IF NOT EXISTS ticket_submitter_idx ON ticket (submitter);
-ALTER TABLE reportportal.public.issue_ticket
+ALTER TABLE public.issue_ticket
     ADD CONSTRAINT issue_ticket_issue_id_fkey FOREIGN KEY (issue_id) REFERENCES issue (issue_id) ON DELETE CASCADE,
     ADD CONSTRAINT issue_ticket_ticket_id_fkey FOREIGN KEY (ticket_id) REFERENCES ticket (id);
 
