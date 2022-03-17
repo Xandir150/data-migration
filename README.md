@@ -262,7 +262,7 @@ When the migration is finished:
 If something went wrong the problem can be investigated via logs or contacting <support@reportportal.io>. Before migration restart the next steps should be done:
 
 0.  Drop the following mongo collections: 'filterMapping', 'widgetMapping', 'optimizeTest'
-1.  Remove all containers
+1.  Remove all containers. (Be careful, this command will delete all containers running on the machine. If there are other containers that must not be deleted, don't use this command. Delete needed containers one by one)
 ```bash
 docker rm -f $(docker ps -q)
 ```
